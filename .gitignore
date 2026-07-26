@@ -1,0 +1,111 @@
+# ==========================================
+# Operating System Files (macOS, Windows, Linux)
+# ==========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthru.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.trash
+.nfs*
+
+# ==========================================
+# IDEs & Editors (JetBrains, VSCode)
+# ==========================================
+# JetBrains (Android Studio, IntelliJ IDEA, PyCharm)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# General Editor Backups
+*.swp
+*.swo
+*~
+*.bak
+
+# ==========================================
+# Python / Django (Backend)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Django local files & DB
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+*.log
+media/
+staticfiles/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.nox/
+.tox/
+
+# ==========================================
+# Kotlin / Gradle / Android / KMP (Frontend)
+# ==========================================
+# Gradle & Build Output
+.gradle/
+build/
+**/build/
+.kotlin/
+kotlin-daemon.log*
+
+# Android Local Files & Credentials
+local.properties
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Environment & Secret Files
+.env
+.env.local
+.env.*.local
