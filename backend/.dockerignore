@@ -1,0 +1,18 @@
+# Python / Cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django Local / DB
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Version Control & Environment
+.git/
+.gitignore
+.env
