@@ -1,0 +1,17 @@
+default:
+    @just --list
+
+fmt:
+    ruff format .
+    ruff check --fix .
+
+check:
+    ruff format --check .
+    ruff check .
+
+test:
+    pytest
+
+ci:
+    just check
+    just test

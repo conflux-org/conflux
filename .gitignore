@@ -83,6 +83,7 @@ staticfiles/
 htmlcov/
 .nox/
 .tox/
+.ruff_cache/
 
 # ==========================================
 # Kotlin / Gradle / Android / KMP (Frontend)
@@ -109,3 +110,4 @@ captures/
 .env
 .env.local
 .env.*.local
+backend/conflux_backend.egg-info/
