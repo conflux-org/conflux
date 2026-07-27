@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from django.test import TestCase
 from django.urls import reverse
 from .models import Item
@@ -7,7 +8,7 @@ class APITestCase(TestCase):
     def test_api_returns_ok_response(self):
         url = reverse('test_api')
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.json(), {
             "status": "ok",
             "message": "API test successful"
@@ -21,7 +22,7 @@ class ItemAPITestCase(TestCase):
     def test_get_items(self):
         url = reverse('item_list')
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         data = response.json()
         self.assertIn("items", data)
         self.assertEqual(len(data["items"]), 2)
@@ -34,7 +35,7 @@ class ItemAPITestCase(TestCase):
             "description": "New Description"
         }
         response = self.client.post(url, data=payload, content_type='application/json')
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
         data = response.json()
         self.assertIn("id", data)
         self.assertEqual(data["name"], "New Item")
