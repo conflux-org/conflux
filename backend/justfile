@@ -3,17 +3,15 @@ default:
 
 fmt:
     ruff format .
+    ruff check --fix .
 
 check:
+    ruff format --check .
     ruff check .
-
-fix:
-    ruff check --fix .
 
 test:
     pytest
 
 ci:
     just check
-    just fix
     just test
