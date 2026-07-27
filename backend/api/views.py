@@ -1,8 +1,11 @@
-import json
 from http import HTTPStatus
+import json
+
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+
 from .models import Item
+
 
 # Create your views here.
 def test_api(request):
@@ -29,7 +32,7 @@ def item_list(request):
                 "description": item.description,
                 "created_at": item.created_at
             }, status=HTTPStatus.CREATED)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return JsonResponse({"error": str(e)}, status=HTTPStatus.BAD_REQUEST)
     return JsonResponse({"error": "Method not allowed"}, status=HTTPStatus.METHOD_NOT_ALLOWED)
 

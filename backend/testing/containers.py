@@ -3,10 +3,8 @@ from __future__ import annotations
 from contextlib import ExitStack
 from typing import (
     TYPE_CHECKING,
-    Generic,
     Protocol,
     Self,
-    TypeVar,
     override,
     runtime_checkable,
 )
@@ -17,9 +15,6 @@ from testcontainers.core.container import DockerContainer
 if TYPE_CHECKING:
     from django.conf import LazySettings
 
-C = TypeVar("C", bound=DockerContainer)
-
-
 @runtime_checkable
 class ServiceProvider(Protocol):
     def start(self) -> None: ...
@@ -27,7 +22,7 @@ class ServiceProvider(Protocol):
     def apply(self, settings: LazySettings) -> None: ...
 
 
-class BaseProvider(Generic[C]):
+class BaseProvider[C: DockerContainer]:
     _container: C | None = None
 
     def make_container(self) -> C:

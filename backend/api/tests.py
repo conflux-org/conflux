@@ -1,7 +1,10 @@
 from http import HTTPStatus
+
 from django.test import TestCase
 from django.urls import reverse
+
 from .models import Item
+
 
 # Create your tests here.
 class APITestCase(TestCase):
@@ -39,7 +42,6 @@ class ItemAPITestCase(TestCase):
         data = response.json()
         self.assertIn("id", data)
         self.assertEqual(data["name"], "New Item")
-        
-        # Verify it was actually saved in DB
+
         self.assertTrue(Item.objects.filter(name="New Item").exists())
 
