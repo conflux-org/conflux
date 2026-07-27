@@ -12,7 +12,7 @@ extend-exclude = ["**/migrations/*"]
 [project]
 name = "conflux-backend"
 version = "0.1.0"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "Django==6.0.7",
     "psycopg[binary]>=3.2",
