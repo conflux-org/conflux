@@ -15,6 +15,7 @@ from testcontainers.core.container import DockerContainer
 if TYPE_CHECKING:
     from django.conf import LazySettings
 
+
 @runtime_checkable
 class ServiceProvider(Protocol):
     def start(self) -> None: ...
