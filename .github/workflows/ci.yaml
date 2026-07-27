@@ -40,4 +40,6 @@ jobs:
 
       - name: Run tests
         run: pytest
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
 
