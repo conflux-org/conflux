@@ -16,6 +16,3 @@ staticfiles/
 .git/
 .gitignore
 .env
-
-# Docker config folder itself
-Dockerfile/
