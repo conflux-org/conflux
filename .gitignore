@@ -89,10 +89,13 @@ htmlcov/
 # ==========================================
 # Gradle & Build Output
 .gradle/
+.gradle-user-home/
 build/
 **/build/
 .kotlin/
 kotlin-daemon.log*
+kotlin-js-store/
+
 
 # Android Local Files & Credentials
 local.properties
