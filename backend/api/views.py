@@ -1,5 +1,5 @@
-from http import HTTPStatus
 import json
+from http import HTTPStatus
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
