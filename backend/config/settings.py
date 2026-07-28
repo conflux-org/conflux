@@ -74,16 +74,36 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 import os
+from urllib.parse import parse_qs, urlparse
 
-DB_HOST = os.environ.get("DB_HOST")
-if DB_HOST:
+aiven_token = os.environ.get("aiven_TOKEN")
+use_aiven = os.environ.get("USE_AIVEN") == "1"
+
+if use_aiven and aiven_token:
+    url = urlparse(aiven_token)
+    query_params = parse_qs(url.query)
+    sslmode = query_params.get("sslmode", ["require"])[0]
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": url.path.lstrip("/"),
+            "USER": url.username,
+            "PASSWORD": url.password,
+            "HOST": url.hostname,
+            "PORT": url.port or 5432,
+            "OPTIONS": {
+                "sslmode": sslmode,
+            },
+        }
+    }
+elif os.environ.get("DB_HOST"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.environ.get("DB_NAME", "conflux"),
             "USER": os.environ.get("DB_USER", "postgres"),
             "PASSWORD": os.environ.get("DB_PASSWORD", "conflux_password"),
-            "HOST": DB_HOST,
+            "HOST": os.environ.get("DB_HOST"),
             "PORT": os.environ.get("DB_PORT", "5432"),
         }
     }
