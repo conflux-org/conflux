@@ -15,7 +15,7 @@ test:
     pytest
 
 test-aiven:
-    python3 test/test.py
+    pytest -s test/test_aiven.py
 
 ci:
     just check
