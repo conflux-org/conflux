@@ -27,19 +27,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install ".[dev]"
 
-      - name: Lint (ruff)
-        run: ruff check .
-
-      - name: Format check (ruff)
-        run: ruff format --check .
-
-      - name: Check for missing migrations
-        run: python manage.py makemigrations --check --dry-run
-        env:
-          SECRET_KEY: ci-dummy
-
       - name: Run tests
         run: pytest
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
 
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+        env:
+          SECRET_KEY: ci-dummy
+          
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (ruff)
+        run: ruff format --check .
