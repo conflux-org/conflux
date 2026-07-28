@@ -3,7 +3,7 @@ from http import HTTPStatus
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Item
+from .models import Channel, Guild, Item, Message, User
 
 
 # Create your tests here.
@@ -45,3 +45,51 @@ class ItemAPITestCase(TestCase):
         self.assertEqual(data["name"], "New Item")
 
         self.assertTrue(Item.objects.filter(name="New Item").exists())
+
+
+class ModelTestCase(TestCase):
+    def setUp(self):
+        # Create users
+        self.owner = User.objects.create(name="Owner User")
+        self.member1 = User.objects.create(name="Member User 1")
+        self.member2 = User.objects.create(name="Member User 2")
+
+        # Create guild
+        self.guild = Guild.objects.create(name="Test Guild", owner=self.owner)
+        self.guild.members.add(self.member1, self.member2)
+
+        # Create channel
+        self.channel = Channel.objects.create(name="General", guild=self.guild)
+
+        # Create message
+        self.message = Message.objects.create(
+            author=self.member1, content="Hello World!", channel=self.channel
+        )
+
+    def test_user_creation(self):
+        self.assertEqual(self.owner.name, "Owner User")
+        self.assertIsNotNone(self.owner.create_datetime)
+        self.assertIsNotNone(self.owner.update_datetime)
+
+    def test_guild_relationships(self):
+        self.assertEqual(self.guild.owner, self.owner)
+        self.assertEqual(self.guild.members.count(), 2)
+        self.assertIn(self.member1, self.guild.members.all())
+        self.assertIn(self.member2, self.guild.members.all())
+
+        # Test reverse relationships
+        self.assertIn(self.guild, self.owner.owned_guilds.all())
+        self.assertIn(self.guild, self.member1.guilds.all())
+
+    def test_channel_relationship(self):
+        self.assertEqual(self.channel.guild, self.guild)
+        self.assertIn(self.channel, self.guild.channels.all())
+
+    def test_message_relationship(self):
+        self.assertEqual(self.message.author, self.member1)
+        self.assertEqual(self.message.channel, self.channel)
+        self.assertEqual(self.message.content, "Hello World!")
+
+        # Test reverse relationships
+        self.assertIn(self.message, self.member1.messages.all())
+        self.assertIn(self.message, self.channel.messages.all())
