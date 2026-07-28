@@ -6,14 +6,20 @@ class Item(models.Model):
     description = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = "items"
+
     def __str__(self):
         return self.name
 
 
 class User(models.Model):
     name = models.CharField(max_length=255)
-    create_datetime = models.DateTimeField(auto_now_add=True)
-    update_datetime = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "users"
 
     def __str__(self):
         return self.name
@@ -25,11 +31,18 @@ class Guild(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="owned_guilds",
-        db_column="ownerId",
+        db_column="owner_id",
     )
-    members = models.ManyToManyField(User, related_name="guilds")
-    create_datetime = models.DateTimeField(auto_now_add=True)
-    update_datetime = models.DateTimeField(auto_now=True)
+    members = models.ManyToManyField(
+        User,
+        related_name="guilds",
+        db_table="guild_members",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "guilds"
 
     def __str__(self):
         return self.name
@@ -41,10 +54,13 @@ class Channel(models.Model):
         Guild,
         on_delete=models.CASCADE,
         related_name="channels",
-        db_column="guildId",
+        db_column="guild_id",
     )
-    create_datetime = models.DateTimeField(auto_now_add=True)
-    update_datetime = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "channels"
 
     def __str__(self):
         return self.name
@@ -55,17 +71,20 @@ class Message(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="messages",
-        db_column="author",
+        db_column="author_id",
     )
     content = models.TextField()
     channel = models.ForeignKey(
         Channel,
         on_delete=models.CASCADE,
         related_name="messages",
-        db_column="channelId",
+        db_column="channel_id",
     )
-    create_datetime = models.DateTimeField(auto_now_add=True)
-    update_datetime = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "messages"
 
     def __str__(self):
         return f"{self.author.name}: {self.content[:20]}"

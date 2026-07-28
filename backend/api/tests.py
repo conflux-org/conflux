@@ -68,8 +68,8 @@ class ModelTestCase(TestCase):
 
     def test_user_creation(self):
         self.assertEqual(self.owner.name, "Owner User")
-        self.assertIsNotNone(self.owner.create_datetime)
-        self.assertIsNotNone(self.owner.update_datetime)
+        self.assertIsNotNone(self.owner.created_at)
+        self.assertIsNotNone(self.owner.updated_at)
 
     def test_guild_relationships(self):
         self.assertEqual(self.guild.owner, self.owner)
