@@ -1,3 +1,5 @@
+set dotenv-load := true
+
 default:
     @just --list
 
@@ -11,6 +13,9 @@ check:
 
 test:
     pytest
+
+test-aiven:
+    pytest -s test/test_aiven.py
 
 ci:
     just check

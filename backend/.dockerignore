@@ -1,5 +1,6 @@
 # Python / Cache
 .venv/
+.env/
 venv/
 __pycache__/
 *.pyc
@@ -15,4 +16,5 @@ staticfiles/
 # Version Control & Environment
 .git/
 .gitignore
+.venv
 .env
