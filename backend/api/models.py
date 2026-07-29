@@ -36,7 +36,7 @@ class Guild(models.Model):
     members = models.ManyToManyField(
         User,
         related_name="guilds",
-        db_table="guild_members",
+        through="GuildMember",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -46,6 +46,32 @@ class Guild(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class GuildMember(models.Model):
+    guild = models.ForeignKey(
+        Guild,
+        on_delete=models.CASCADE,
+        db_column="guild_id",
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        db_column="user_id",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "guild_members"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["guild", "user"], name="unique_guild_member"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.guild.name} - {self.user.name}"
 
 
 class Channel(models.Model):

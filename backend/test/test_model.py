@@ -37,6 +37,20 @@ class ModelTestCase(TestCase):
         self.assertIn(self.guild, self.owner.owned_guilds.all())
         self.assertIn(self.guild, self.member1.guilds.all())
 
+    def test_guild_member_through_model(self):
+        from api.models import GuildMember
+
+        memberships = GuildMember.objects.filter(guild=self.guild)
+        self.assertEqual(memberships.count(), 2)
+
+        for membership in memberships:
+            self.assertIsNotNone(membership.created_at)
+            self.assertIsNotNone(membership.updated_at)
+            self.assertIn(membership.user, [self.member1, self.member2])
+            self.assertEqual(
+                str(membership), f"{self.guild.name} - {membership.user.name}"
+            )
+
     def test_channel_relationship(self):
         self.assertEqual(self.channel.guild, self.guild)
         self.assertIn(self.channel, self.guild.channels.all())
