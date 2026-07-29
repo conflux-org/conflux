@@ -66,7 +66,7 @@ class GuildMember(models.Model):
         db_table = "guild_members"
         constraints = (
             models.UniqueConstraint(
-                fields=["guild", "user"], name="unique_guild_member"
+                fields=["guild", "user"], name="uk_guild_members_guild_id_user_id"
             ),
         )
 
