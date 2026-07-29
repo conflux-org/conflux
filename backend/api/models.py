@@ -73,7 +73,6 @@ class Message(models.Model):
         related_name="messages",
         db_column="author_id",
     )
-    author_name = models.CharField(max_length=255, blank=True, default="")
     content = models.TextField()
     channel = models.ForeignKey(
         Channel,
@@ -87,10 +86,5 @@ class Message(models.Model):
     class Meta:
         db_table = "messages"
 
-    def save(self, *args, **kwargs):
-        if self.author:
-            self.author_name = self.author.name
-        super().save(*args, **kwargs)
-
     def __str__(self):
-        return f"{self.author_name}: {self.content[:20]}"
+        return f"Message({self.id}) in Channel({self.channel_id}) by User({self.author_id})"

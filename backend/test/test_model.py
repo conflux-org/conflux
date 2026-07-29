@@ -45,8 +45,10 @@ class ModelTestCase(TestCase):
         self.assertEqual(self.message.author, self.member1)
         self.assertEqual(self.message.channel, self.channel)
         self.assertEqual(self.message.content, "Hello World!")
-        self.assertEqual(self.message.author_name, "Member User 1")
-        self.assertEqual(str(self.message), "Member User 1: Hello World!")
+        self.assertEqual(
+            str(self.message),
+            f"Message({self.message.id}) in Channel({self.channel.id}) by User({self.member1.id})",
+        )
 
         # Test reverse relationships
         self.assertIn(self.message, self.member1.messages.all())
@@ -58,4 +60,7 @@ class ModelTestCase(TestCase):
         # Check that accessing __str__ runs 0 database queries
         with self.assertNumQueries(0):
             msg_str = str(msg)
-        self.assertEqual(msg_str, "Member User 1: Hello World!")
+        self.assertEqual(
+            msg_str,
+            f"Message({msg.id}) in Channel({msg.channel_id}) by User({msg.author_id})",
+        )
