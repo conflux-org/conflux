@@ -7,4 +7,28 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
+    alias(libs.plugins.spotless)
+}
+
+spotless {
+    kotlinGradle {
+        target("*.gradle.kts")
+        ktlint("1.5.0")
+    }
+}
+
+subprojects {
+    apply(plugin = "com.diffplug.spotless")
+    configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+        kotlin {
+            target("**/*.kt")
+            targetExclude("**/build/**")
+            ktlint("1.5.0")
+        }
+        kotlinGradle {
+            target("**/*.gradle.kts")
+            targetExclude("**/build/**")
+            ktlint("1.5.0")
+        }
+    }
 }

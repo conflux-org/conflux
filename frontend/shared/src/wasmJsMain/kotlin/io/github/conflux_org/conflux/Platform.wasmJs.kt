@@ -1,6 +1,6 @@
 package io.github.conflux_org.conflux
 
-class WasmPlatform: Platform {
+class WasmPlatform : Platform {
     override val name: String = "Web with Kotlin/Wasm"
 }
 
