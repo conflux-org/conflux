@@ -48,7 +48,7 @@ class ModelTestCase(TestCase):
             self.assertIsNotNone(membership.updated_at)
             self.assertIn(membership.user, [self.member1, self.member2])
             self.assertEqual(
-                str(membership), f"{self.guild.name} - {membership.user.name}"
+                str(membership), f"{membership.guild_id} - {membership.user_id}"
             )
 
     def test_channel_relationship(self):

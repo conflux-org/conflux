@@ -71,7 +71,7 @@ class GuildMember(models.Model):
         )
 
     def __str__(self):
-        return f"{self.guild.name} - {self.user.name}"
+        return f"{self.guild_id} - {self.user_id}"
 
 
 class Channel(models.Model):
