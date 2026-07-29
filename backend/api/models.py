@@ -64,11 +64,11 @@ class GuildMember(models.Model):
 
     class Meta:
         db_table = "guild_members"
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=["guild", "user"], name="unique_guild_member"
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f"{self.guild.name} - {self.user.name}"
