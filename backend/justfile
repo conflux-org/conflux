@@ -13,6 +13,7 @@ check:
 
 test:
     pytest
+
 ci:
     just check
     just test
