@@ -13,10 +13,6 @@ check:
 
 test:
     pytest
-
-test-aiven:
-    pytest -s test/test_aiven.py
-
 ci:
     just check
     just test
