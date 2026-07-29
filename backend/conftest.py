@@ -13,7 +13,6 @@ def container_stack():
         raise RuntimeError("Docker 沒有啟動，請啟動 Docker 後再執行測試。") from e
 
 
-
 @pytest.fixture(scope="session")
 def django_db_setup(request, container_stack, django_db_blocker):
     from django.conf import settings
