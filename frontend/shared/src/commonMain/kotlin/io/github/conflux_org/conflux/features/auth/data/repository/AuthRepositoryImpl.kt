@@ -23,7 +23,7 @@ class AuthRepositoryImpl(
     ): Result<User> =
         try {
             val response =
-                httpClient.post("$baseUrl/api/auth/login") {
+                httpClient.post("$baseUrl/api/auth/login/") {
                     contentType(ContentType.Application.Json)
                     setBody(LoginRequest(username = username, password = password))
                 }
