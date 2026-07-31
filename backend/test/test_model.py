@@ -24,8 +24,14 @@ class ModelTestCase(TestCase):
 
     def test_user_creation(self):
         self.assertEqual(self.owner.name, "Owner User")
+        self.assertIsNone(self.owner.password)
         self.assertIsNotNone(self.owner.created_at)
         self.assertIsNotNone(self.owner.updated_at)
+
+        user_with_pass = User.objects.create(
+            name="Pass User", password="hashed_password_123"
+        )
+        self.assertEqual(user_with_pass.password, "hashed_password_123")
 
     def test_guild_relationships(self):
         self.assertEqual(self.guild.owner, self.owner)
