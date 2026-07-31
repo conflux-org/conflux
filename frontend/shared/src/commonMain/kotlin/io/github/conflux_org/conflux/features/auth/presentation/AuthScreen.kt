@@ -1,8 +1,14 @@
 package io.github.conflux_org.conflux.features.auth.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +45,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.conflux_org.conflux.core.ui.components.AppOutlinedTextField
 
 enum class AuthPage {
     LOGIN,
@@ -124,13 +131,10 @@ private fun LoginPage(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                OutlinedTextField(
+                AppOutlinedTextField(
                     value = state.username,
                     onValueChange = { onIntent(AuthIntent.UsernameChanged(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = darkTextFieldColors(),
+                    placeholder = { Text("請輸入帳號", color = Color(0xFF8A8A8A)) },
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -139,19 +143,16 @@ private fun LoginPage(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                OutlinedTextField(
+                AppOutlinedTextField(
                     value = state.password,
                     onValueChange = { onIntent(AuthIntent.PasswordChanged(it)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    placeholder = { Text("請輸入密碼", color = Color(0xFF8A8A8A)) },
                     visualTransformation =
                         if (showPassword) {
                             VisualTransformation.None
                         } else {
                             PasswordVisualTransformation()
                         },
-                    shape = RoundedCornerShape(10.dp),
-                    colors = darkTextFieldColors(),
                 )
 
                 Row(
@@ -182,7 +183,11 @@ private fun LoginPage(
                     }
                 }
 
-                if (state.errorMessage.isNotEmpty()) {
+                AnimatedVisibility(
+                    visible = state.errorMessage.isNotEmpty(),
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
                     Text(
                         text = state.errorMessage,
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -199,14 +204,16 @@ private fun LoginPage(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91)),
                 ) {
-                    if (state.isLoginLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Text(text = "登入", style = MaterialTheme.typography.titleMedium)
+                    Box(contentAlignment = Alignment.Center) {
+                        if (state.isLoginLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Text(text = "登入", style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
             }
@@ -274,7 +281,7 @@ private fun SignUpPage(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
+                AppOutlinedTextField(
                     value = userName,
                     onValueChange = {
                         userName = it
@@ -283,12 +290,11 @@ private fun SignUpPage(
                     label = { Text("用戶名稱") },
                     modifier = Modifier.weight(2f),
                     singleLine = true,
-                    colors = darkTextFieldColors(),
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                OutlinedTextField(
+                AppOutlinedTextField(
                     value = userId,
                     onValueChange = {
                         userId = it
@@ -297,13 +303,12 @@ private fun SignUpPage(
                     label = { Text("#ID") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    colors = darkTextFieldColors(),
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            AppOutlinedTextField(
                 value = email,
                 onValueChange = {
                     email = it
@@ -312,12 +317,11 @@ private fun SignUpPage(
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = darkTextFieldColors(),
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            AppOutlinedTextField(
                 value = password,
                 onValueChange = {
                     password = it
@@ -327,12 +331,11 @@ private fun SignUpPage(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                colors = darkTextFieldColors(),
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            AppOutlinedTextField(
                 value = confirmPassword,
                 onValueChange = {
                     confirmPassword = it
@@ -342,7 +345,6 @@ private fun SignUpPage(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                colors = darkTextFieldColors(),
             )
 
             Row(
@@ -447,7 +449,7 @@ private fun ForgotPasswordPage(onBackClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(
+            AppOutlinedTextField(
                 value = email,
                 onValueChange = {
                     email = it
@@ -457,7 +459,6 @@ private fun ForgotPasswordPage(onBackClick: () -> Unit) {
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = darkTextFieldColors(),
             )
 
             if (errorMessage.isNotEmpty()) {
@@ -504,18 +505,6 @@ private fun ForgotPasswordPage(onBackClick: () -> Unit) {
         }
     }
 }
-
-@Composable
-private fun darkTextFieldColors() =
-    OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White,
-        focusedLabelColor = Color.White,
-        unfocusedLabelColor = Color(0xFFB5B5B5),
-        focusedBorderColor = Color(0xFF6C6CB5),
-        unfocusedBorderColor = Color(0xFF8A8A8A),
-        cursorColor = Color.White,
-    )
 
 @Preview
 @Composable

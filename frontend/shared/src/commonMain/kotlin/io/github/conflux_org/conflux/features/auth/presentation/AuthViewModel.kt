@@ -38,13 +38,14 @@ class AuthViewModel(
         username: String,
         password: String,
     ) {
-        _uiState.update { it.copy(isLoginLoading = true, errorMessage = "") }
+        _uiState.update { it.copy(isLoginLoading = true) }
 
         CoroutineScope(mainDispatcher).launch {
             try {
                 authRepository
                     .login(username, password)
                     .onSuccess { user ->
+                        _uiState.update { it.copy(errorMessage = "") }
                         onLoginSuccess?.invoke(user.id)
                     }.onFailure { error ->
                         _uiState.update { it.copy(errorMessage = error.message ?: "登入失敗") }
