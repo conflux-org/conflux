@@ -41,7 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 enum class AuthPage {
-    LOGIN, SIGN_UP, FORGOT_PASSWORD
+    LOGIN,
+    SIGN_UP,
+    FORGOT_PASSWORD,
 }
 
 @Composable
@@ -54,13 +56,15 @@ fun AuthScreen(viewModel: AuthViewModel) {
                 state = uiState,
                 onIntent = viewModel::handleIntent,
                 onForgotPasswordClick = { currentPage = AuthPage.FORGOT_PASSWORD },
-                onSignUpClick = { currentPage = AuthPage.SIGN_UP })
+                onSignUpClick = { currentPage = AuthPage.SIGN_UP },
+            )
         }
 
         AuthPage.SIGN_UP -> {
             SignUpPage(
                 onBackClick = { currentPage = AuthPage.LOGIN },
-                onSignUpSuccess = { currentPage = AuthPage.LOGIN })
+                onSignUpSuccess = { currentPage = AuthPage.LOGIN },
+            )
         }
 
         AuthPage.FORGOT_PASSWORD -> {
@@ -74,43 +78,47 @@ private fun LoginPage(
     state: AuthUiState,
     onIntent: (AuthIntent) -> Unit,
     onForgotPasswordClick: () -> Unit,
-    onSignUpClick: () -> Unit
+    onSignUpClick: () -> Unit,
 ) {
     var showPassword by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
+        modifier = Modifier.fillMaxSize().background(Color(0xFF1C1C1F)).safeContentPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp)
-                .background(color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp))
-                .padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 420.dp)
+                    .background(color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp))
+                    .padding(vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "登入你的帳號",
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
             )
 
             Spacer(
-                modifier = Modifier.height(8.dp)
+                modifier = Modifier.height(8.dp),
             )
 
             Text(
                 text = "歡迎回來，請登入你的帳號",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color(0xFF9A9A9A)
+                color = Color(0xFF9A9A9A),
             )
 
             Spacer(
-                modifier = Modifier.height(30.dp)
+                modifier = Modifier.height(30.dp),
             )
 
             Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             ) {
                 Text(text = "帳號", color = Color.White)
 
@@ -122,7 +130,7 @@ private fun LoginPage(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
-                    colors = darkTextFieldColors()
+                    colors = darkTextFieldColors(),
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -136,33 +144,36 @@ private fun LoginPage(
                     onValueChange = { onIntent(AuthIntent.PasswordChanged(it)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    visualTransformation = if (showPassword) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
+                    visualTransformation =
+                        if (showPassword) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                     shape = RoundedCornerShape(10.dp),
-                    colors = darkTextFieldColors()
+                    colors = darkTextFieldColors(),
                 )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = showPassword,
                         onCheckedChange = { showPassword = it },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFF4A4A91),
-                            uncheckedColor = Color.White,
-                            checkmarkColor = Color.White
-                        )
+                        colors =
+                            CheckboxDefaults.colors(
+                                checkedColor = Color(0xFF4A4A91),
+                                uncheckedColor = Color.White,
+                                checkmarkColor = Color.White,
+                            ),
                     )
 
                     Text(
                         text = "顯示密碼",
                         color = Color.White,
-                        modifier = Modifier.clickable { showPassword = !showPassword })
+                        modifier = Modifier.clickable { showPassword = !showPassword },
+                    )
 
                     Spacer(modifier = Modifier.weight(1f))
 
@@ -175,7 +186,7 @@ private fun LoginPage(
                     Text(
                         text = state.errorMessage,
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
 
@@ -186,13 +197,13 @@ private fun LoginPage(
                     enabled = state.isLoginButtonEnabled,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91)),
                 ) {
                     if (state.isLoginLoading) {
                         CircularProgressIndicator(
                             color = Color.White,
                             modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
+                            strokeWidth = 2.dp,
                         )
                     } else {
                         Text(text = "登入", style = MaterialTheme.typography.titleMedium)
@@ -218,7 +229,8 @@ private fun LoginPage(
  */
 @Composable
 private fun SignUpPage(
-    onBackClick: () -> Unit, onSignUpSuccess: () -> Unit
+    onBackClick: () -> Unit,
+    onSignUpSuccess: () -> Unit,
 ) {
     var userName by remember { mutableStateOf("") }
     var userId by remember { mutableStateOf("") }
@@ -231,18 +243,24 @@ private fun SignUpPage(
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp).background(
-                color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp)
-            ).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 520.dp)
+                    .background(
+                        color = Color(0xFF2E2E2E),
+                        shape = RoundedCornerShape(16.dp),
+                    ).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "註冊新帳號",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -250,7 +268,7 @@ private fun SignUpPage(
             Text(
                 text = "請填寫以下資料以建立帳號",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color(0xFF9A9A9A)
+                color = Color(0xFF9A9A9A),
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -265,7 +283,7 @@ private fun SignUpPage(
                     label = { Text("用戶名稱") },
                     modifier = Modifier.weight(2f),
                     singleLine = true,
-                    colors = darkTextFieldColors()
+                    colors = darkTextFieldColors(),
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -279,7 +297,7 @@ private fun SignUpPage(
                     label = { Text("#ID") },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    colors = darkTextFieldColors()
+                    colors = darkTextFieldColors(),
                 )
             }
 
@@ -294,7 +312,7 @@ private fun SignUpPage(
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = darkTextFieldColors()
+                colors = darkTextFieldColors(),
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -309,7 +327,7 @@ private fun SignUpPage(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                colors = darkTextFieldColors()
+                colors = darkTextFieldColors(),
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -324,32 +342,36 @@ private fun SignUpPage(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                colors = darkTextFieldColors()
+                colors = darkTextFieldColors(),
             )
 
             Row(
-                modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(
-                    checked = showPassword, onCheckedChange = { showPassword = it },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = Color(0xFF4A4A91),
-                        uncheckedColor = Color.White,
-                        checkmarkColor = Color.White
-                    )
+                    checked = showPassword,
+                    onCheckedChange = { showPassword = it },
+                    colors =
+                        CheckboxDefaults.colors(
+                            checkedColor = Color(0xFF4A4A91),
+                            uncheckedColor = Color.White,
+                            checkmarkColor = Color.White,
+                        ),
                 )
 
                 Text(
                     text = "顯示密碼",
                     color = Color.White,
-                    modifier = Modifier.clickable { showPassword = !showPassword })
+                    modifier = Modifier.clickable { showPassword = !showPassword },
+                )
             }
 
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
 
@@ -374,7 +396,7 @@ private fun SignUpPage(
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91)),
             ) {
                 Text(text = "註冊", style = MaterialTheme.typography.titleMedium)
             }
@@ -389,9 +411,7 @@ private fun SignUpPage(
 }
 
 @Composable
-private fun ForgotPasswordPage(
-    onBackClick: () -> Unit
-) {
+private fun ForgotPasswordPage(onBackClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
@@ -399,18 +419,22 @@ private fun ForgotPasswordPage(
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp)
-                .background(color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp))
-                .padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 420.dp)
+                    .background(color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp))
+                    .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "忘記密碼",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -418,7 +442,7 @@ private fun ForgotPasswordPage(
             Text(
                 text = "請輸入註冊帳號時使用的 Email",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color(0xFF9A9A9A)
+                color = Color(0xFF9A9A9A),
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -433,14 +457,14 @@ private fun ForgotPasswordPage(
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = darkTextFieldColors()
+                colors = darkTextFieldColors(),
             )
 
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
 
@@ -448,7 +472,7 @@ private fun ForgotPasswordPage(
                 Text(
                     text = successMessage,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    color = Color(0xFF65D46E)
+                    color = Color(0xFF65D46E),
                 )
             }
 
@@ -467,7 +491,7 @@ private fun ForgotPasswordPage(
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91)),
             ) {
                 Text(text = "寄送重設密碼信件", style = MaterialTheme.typography.titleMedium)
             }
@@ -482,15 +506,16 @@ private fun ForgotPasswordPage(
 }
 
 @Composable
-private fun darkTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = Color.White,
-    unfocusedTextColor = Color.White,
-    focusedLabelColor = Color.White,
-    unfocusedLabelColor = Color(0xFFB5B5B5),
-    focusedBorderColor = Color(0xFF6C6CB5),
-    unfocusedBorderColor = Color(0xFF8A8A8A),
-    cursorColor = Color.White
-)
+private fun darkTextFieldColors() =
+    OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.White,
+        unfocusedTextColor = Color.White,
+        focusedLabelColor = Color.White,
+        unfocusedLabelColor = Color(0xFFB5B5B5),
+        focusedBorderColor = Color(0xFF6C6CB5),
+        unfocusedBorderColor = Color(0xFF8A8A8A),
+        cursorColor = Color.White,
+    )
 
 @Preview
 @Composable
@@ -499,6 +524,6 @@ private fun AuthScreenPreview() {
         state = AuthUiState(),
         onIntent = {},
         onForgotPasswordClick = {},
-        onSignUpClick = {}
+        onSignUpClick = {},
     )
 }
