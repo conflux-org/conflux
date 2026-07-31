@@ -17,9 +17,8 @@ Including another URLconf
 
 from django.urls import path
 
-from api.views import item_list, test_api
+from api.auth import login
 
 urlpatterns = [
-    path("api/test/", test_api, name="test_api"),
-    path("api/items/", item_list, name="item_list"),
+    path("api/auth/login/", login, name="login"),
 ]

@@ -1,16 +1,15 @@
 import pytest
 
-from api.models import Item
+from api.models import User
 
 
 @pytest.mark.django_db
 def test_container_up():
-    Item.objects.create(name="widget")
-    assert Item.objects.count() == 1
+    User.objects.create(name="widget")
+    assert User.objects.count() == 1
 
 
 @pytest.mark.django_db
-def test_item_defaults():
-    item = Item.objects.create(name="gadget")
-    assert item.description == ""
-    assert item.created_at is not None
+def test_user_defaults():
+    user = User.objects.create(name="gadget")
+    assert user.created_at is not None
