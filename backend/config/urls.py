@@ -17,8 +17,8 @@ Including another URLconf
 
 from django.urls import path
 
-from api.auth import verify_password
+from api.auth import login
 
 urlpatterns = [
-    path("api/auth/verify/", verify_password, name="verify_password"),
+    path("api/auth/login/", login, name="login"),
 ]

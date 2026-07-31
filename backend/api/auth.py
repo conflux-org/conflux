@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from .models import User
 
 
-def verify_password(request):
+def login(request):
     if request.method != "POST":
         return JsonResponse(
             {"error": "Method not allowed"}, status=HTTPStatus.METHOD_NOT_ALLOWED
