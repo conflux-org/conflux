@@ -1,4 +1,4 @@
-package io.github.conflux_org.conflux.presentation
+package io.github.conflux_org.conflux.features.auth.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,58 +36,48 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-private const val PAGE_LOGIN = "login"
-private const val PAGE_SIGN_UP = "signup"
-private const val PAGE_FORGOT_PASSWORD = "forgot"
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+
+enum class AuthPage {
+    LOGIN, SIGN_UP, FORGOT_PASSWORD
+}
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit = {}
-) {
-    var currentPage by remember { mutableStateOf(PAGE_LOGIN) }
+fun LoginScreen(viewModel: LoginViewModel) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var currentPage by remember { mutableStateOf(AuthPage.LOGIN) }
+    when (currentPage) {
+        AuthPage.LOGIN -> {
+            LoginPage(
+                state = uiState,
+                onIntent = viewModel::handleIntent,
+                onForgotPasswordClick = { currentPage = AuthPage.FORGOT_PASSWORD },
+                onSignUpClick = { currentPage = AuthPage.SIGN_UP })
+        }
 
-    MaterialTheme {
-        when (currentPage) {
-            PAGE_LOGIN -> {
-                LoginPage(
-                    onLoginSuccess = onLoginSuccess,
-                    onForgotPasswordClick = { currentPage = PAGE_FORGOT_PASSWORD },
-                    onSignUpClick = { currentPage = PAGE_SIGN_UP })
-            }
+        AuthPage.SIGN_UP -> {
+            SignUpPage(
+                onBackClick = { currentPage = AuthPage.LOGIN },
+                onSignUpSuccess = { currentPage = AuthPage.LOGIN })
+        }
 
-            PAGE_SIGN_UP -> {
-                SignUpPage(
-                    onBackClick = { currentPage = PAGE_LOGIN },
-                    onSignUpSuccess = { currentPage = PAGE_LOGIN })
-            }
-
-            else -> {
-                ForgotPasswordPage(onBackClick = { currentPage = PAGE_LOGIN })
-            }
+        AuthPage.FORGOT_PASSWORD -> {
+            ForgotPasswordPage(onBackClick = { currentPage = AuthPage.LOGIN })
         }
     }
 }
 
 @Composable
 private fun LoginPage(
-    onLoginSuccess: () -> Unit, onForgotPasswordClick: () -> Unit, onSignUpClick: () -> Unit
+    state: LoginUiState,
+    onIntent: (LoginIntent) -> Unit,
+    onForgotPasswordClick: () -> Unit,
+    onSignUpClick: () -> Unit
 ) {
-    var account by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
-
-    var showPassword by remember {
-        mutableStateOf(false)
-    }
-
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
+    var showPassword by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
@@ -95,9 +85,9 @@ private fun LoginPage(
         verticalArrangement = Arrangement.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp).background(
-                color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp)
-            ).padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp)
+                .background(color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp))
+                .padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "登入你的帳號",
@@ -123,63 +113,36 @@ private fun LoginPage(
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
             ) {
-                Text(
-                    text = "帳號", color = Color.White
-                )
+                Text(text = "帳號", color = Color.White)
 
-                Spacer(
-                    modifier = Modifier.height(4.dp)
-                )
+                Spacer(modifier = Modifier.height(4.dp))
 
                 OutlinedTextField(
-                    value = account,
-
-                    onValueChange = {
-                        account = it
-                        errorMessage = ""
-                    },
-
+                    value = state.username,
+                    onValueChange = { onIntent(LoginIntent.UsernameChanged(it)) },
                     modifier = Modifier.fillMaxWidth(),
-
                     singleLine = true,
-
                     shape = RoundedCornerShape(10.dp),
-
                     colors = darkTextFieldColors()
                 )
 
-                Spacer(
-                    modifier = Modifier.height(16.dp)
-                )
+                Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "密碼", color = Color.White
-                )
+                Text(text = "密碼", color = Color.White)
 
-                Spacer(
-                    modifier = Modifier.height(4.dp)
-                )
+                Spacer(modifier = Modifier.height(4.dp))
 
                 OutlinedTextField(
-                    value = password,
-
-                    onValueChange = {
-                        password = it
-                        errorMessage = ""
-                    },
-
+                    value = state.password,
+                    onValueChange = { onIntent(LoginIntent.PasswordChanged(it)) },
                     modifier = Modifier.fillMaxWidth(),
-
                     singleLine = true,
-
                     visualTransformation = if (showPassword) {
                         VisualTransformation.None
                     } else {
                         PasswordVisualTransformation()
                     },
-
                     shape = RoundedCornerShape(10.dp),
-
                     colors = darkTextFieldColors()
                 )
 
@@ -189,11 +152,7 @@ private fun LoginPage(
                 ) {
                     Checkbox(
                         checked = showPassword,
-
-                        onCheckedChange = {
-                            showPassword = it
-                        },
-
+                        onCheckedChange = { showPassword = it },
                         colors = CheckboxDefaults.colors(
                             checkedColor = Color(0xFF4A4A91),
                             uncheckedColor = Color.White,
@@ -202,92 +161,52 @@ private fun LoginPage(
                     )
 
                     Text(
-                        text = "顯示密碼", color = Color.White,
+                        text = "顯示密碼",
+                        color = Color.White,
+                        modifier = Modifier.clickable { showPassword = !showPassword })
 
-                        modifier = Modifier.clickable {
-                            showPassword = !showPassword
-                        })
+                    Spacer(modifier = Modifier.weight(1f))
 
-                    Spacer(
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    TextButton(
-                        onClick = onForgotPasswordClick
-                    ) {
+                    TextButton(onClick = onForgotPasswordClick) {
                         Text("忘記密碼")
                     }
                 }
 
-                if (errorMessage.isNotEmpty()) {
+                if (state.errorMessage.isNotEmpty()) {
                     Text(
-                        text = errorMessage,
-
+                        text = state.errorMessage,
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-
                         color = MaterialTheme.colorScheme.error
                     )
                 }
 
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = {
-                        when {
-                            account.isBlank() -> {
-                                errorMessage = "請輸入帳號"
-                            }
-
-                            password.isBlank() -> {
-                                errorMessage = "請輸入密碼"
-                            }
-
-                            account == "admin" && password == "1234" -> {
-
-                                errorMessage = ""
-
-                                println("登入成功")
-
-                                // 通知外層切換至主畫面
-                                onLoginSuccess()
-                            }
-
-                            else -> {
-                                errorMessage = "帳號或密碼錯誤"
-                            }
-                        }
-                    },
-
+                    onClick = { onIntent(LoginIntent.Login) },
+                    enabled = state.isLoginButtonEnabled,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
-
                     shape = RoundedCornerShape(12.dp),
-
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4A4A91)
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91))
                 ) {
-                    Text(
-                        text = "登入", style = MaterialTheme.typography.titleMedium
-                    )
+                    if (state.isLoginLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(text = "登入", style = MaterialTheme.typography.titleMedium)
+                    }
                 }
             }
 
-            Spacer(
-                modifier = Modifier.height(20.dp)
-            )
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "還沒有帳號？", color = Color.White
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "還沒有帳號？", color = Color.White)
 
-                TextButton(
-                    onClick = onSignUpClick
-                ) {
+                TextButton(onClick = onSignUpClick) {
                     Text("立即註冊!")
                 }
             }
@@ -437,20 +356,13 @@ private fun SignUpPage(
 
             OutlinedTextField(
                 value = password,
-
                 onValueChange = {
                     password = it
                     errorMessage = ""
                 },
-
-                label = {
-                    Text("密碼")
-                },
-
+                label = { Text("密碼") },
                 modifier = Modifier.fillMaxWidth(),
-
                 singleLine = true,
-
                 visualTransformation = if (showPassword) {
                     VisualTransformation.None
                 } else {
@@ -466,26 +378,20 @@ private fun SignUpPage(
 
             OutlinedTextField(
                 value = confirmPassword,
-
                 onValueChange = {
                     confirmPassword = it
                     errorMessage = ""
                 },
-
                 label = {
                     Text("再次輸入密碼")
                 },
-
                 modifier = Modifier.fillMaxWidth(),
-
                 singleLine = true,
-
                 visualTransformation = if (showPassword) {
                     VisualTransformation.None
                 } else {
                     PasswordVisualTransformation()
                 },
-
                 colors = darkTextFieldColors()
             )
 
@@ -493,13 +399,9 @@ private fun SignUpPage(
                 modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
-                    checked = showPassword,
-
-                    onCheckedChange = {
+                    checked = showPassword, onCheckedChange = {
                         showPassword = it
-                    },
-
-                    colors = CheckboxDefaults.colors(
+                    }, colors = CheckboxDefaults.colors(
                         checkedColor = Color(0xFF4A4A91),
                         uncheckedColor = Color.White,
                         checkmarkColor = Color.White
@@ -507,26 +409,20 @@ private fun SignUpPage(
                 )
 
                 Text(
-                    text = "顯示密碼", color = Color.White,
-
-                    modifier = Modifier.clickable {
-                        showPassword = !showPassword
-                    })
+                    text = "顯示密碼",
+                    color = Color.White,
+                    modifier = Modifier.clickable { showPassword = !showPassword })
             }
 
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
-
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-
                     color = MaterialTheme.colorScheme.error
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
@@ -572,27 +468,16 @@ private fun SignUpPage(
                         }
                     }
                 },
-
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-
                 shape = RoundedCornerShape(12.dp),
-
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4A4A91)
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91))
             ) {
-                Text(
-                    text = "註冊", style = MaterialTheme.typography.titleMedium
-                )
+                Text(text = "註冊", style = MaterialTheme.typography.titleMedium)
             }
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-            TextButton(
-                onClick = onBackClick
-            ) {
+            TextButton(onClick = onBackClick) {
                 Text("已經有帳號？返回登入")
             }
         }
@@ -621,11 +506,9 @@ private fun ForgotPasswordPage(
         verticalArrangement = Arrangement.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth()
-                .widthIn(max = 420.dp)
+            modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp)
                 .background(color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp))
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "忘記密碼",
@@ -650,21 +533,14 @@ private fun ForgotPasswordPage(
 
             OutlinedTextField(
                 value = email,
-
                 onValueChange = {
                     email = it
                     errorMessage = ""
                     successMessage = ""
                 },
-
-                label = {
-                    Text("Email")
-                },
-
+                label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
-
                 singleLine = true,
-
                 colors = darkTextFieldColors()
             )
 
@@ -739,6 +615,10 @@ private fun darkTextFieldColors() = OutlinedTextFieldDefaults.colors(
 @Preview
 @Composable
 private fun LoginScreenPreview() {
-    LoginScreen(
-        onLoginSuccess = {})
+    LoginPage(
+        state = LoginUiState(),
+        onIntent = {},
+        onForgotPasswordClick = {},
+        onSignUpClick = {}
+    )
 }

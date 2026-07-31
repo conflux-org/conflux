@@ -1,12 +1,11 @@
 package io.github.conflux_org.conflux.features.auth.presentation
 
-import io.github.conflux_org.conflux.core.common.BaseUiState
-
-data class LoginBusinessState(
+data class LoginUiState(
     val username: String = "",
     val password: String = "",
-    val isLoginButtonEnabled: Boolean = false,
-    val loginLoading: Boolean = false
-)
-
-typealias LoginUiState = BaseUiState<LoginBusinessState>
+    val isLoginLoading: Boolean = false,
+    val errorMessage: String = ""
+) {
+    val isLoginButtonEnabled: Boolean
+        get() = username.isNotBlank() && password.isNotBlank() && !isLoginLoading
+}
