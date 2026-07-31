@@ -19,7 +19,7 @@ def login(request):
     username = data.get("username")
     password = data.get("password")
 
-    if not username or password is None:
+    if not username or not password :
         return JsonResponse(
             {"error": "Missing required field: username or password"},
             status=HTTPStatus.BAD_REQUEST,
