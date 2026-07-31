@@ -108,18 +108,6 @@ class SoftDeleteModel(models.Model):
         return total_deleted, deleted_counter
 
 
-class Item(SoftDeleteModel):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, default="")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "items"
-
-    def __str__(self):
-        return self.name
-
-
 class User(SoftDeleteModel):
     name = models.CharField(max_length=255)
     password = models.CharField(max_length=255, null=True, blank=True)

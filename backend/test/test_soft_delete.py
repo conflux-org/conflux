@@ -4,7 +4,7 @@ from django.db import connection
 from django.test import TestCase
 from django.utils import timezone
 
-from api.models import Channel, Guild, GuildMember, Item, Message, User
+from api.models import Channel, Guild, GuildMember, Message, User
 
 
 class SoftDeleteTestCase(TestCase):
@@ -26,66 +26,72 @@ class SoftDeleteTestCase(TestCase):
         )
 
     def test_initial_state(self):
-        item = Item.objects.create(name="Sword")
-        self.assertIsNone(item.deleted_at)
+        user = User.objects.create(name="Sword User")
+        self.assertIsNone(user.deleted_at)
 
     def test_instance_soft_delete(self):
-        item = Item.objects.create(name="Shield")
-        item_id = item.id
+        user = User.objects.create(name="Shield User")
+        user_id = user.id
 
         # Perform soft delete
-        deleted_count, details = item.delete()
+        deleted_count, details = user.delete()
         self.assertEqual(deleted_count, 1)
-        self.assertEqual(details, {"api.Item": 1})
+        self.assertEqual(details, {"api.User": 1})
 
         # Verify state of object in memory
-        self.assertIsNotNone(item.deleted_at)
-        self.assertLessEqual(item.deleted_at, timezone.now())
+        self.assertIsNotNone(user.deleted_at)
+        self.assertLessEqual(user.deleted_at, timezone.now())
 
         # Verify database queries
-        self.assertFalse(Item.objects.filter(id=item_id).exists())
-        self.assertTrue(Item.all_objects.filter(id=item_id).exists())
+        self.assertFalse(User.objects.filter(id=user_id).exists())
+        self.assertTrue(User.all_objects.filter(id=user_id).exists())
 
     def test_queryset_soft_delete(self):
-        Item.objects.create(name="Axe")
-        Item.objects.create(name="Axe")
+        User.objects.create(name="Axe User 1")
+        User.objects.create(name="Axe User 2")
 
         # Perform bulk soft delete
-        deleted_count, details = Item.objects.filter(name="Axe").delete()
+        deleted_count, details = User.objects.filter(
+            name__startswith="Axe User"
+        ).delete()
         self.assertEqual(deleted_count, 2)
-        self.assertEqual(details, {"api.Item": 2})
+        self.assertEqual(details, {"api.User": 2})
 
         # Verify neither is retrieved via objects
-        self.assertFalse(Item.objects.filter(name="Axe").exists())
+        self.assertFalse(User.objects.filter(name__startswith="Axe User").exists())
 
         # Verify both exist in all_objects
-        items = Item.all_objects.filter(name="Axe")
-        self.assertEqual(items.count(), 2)
-        for item in items:
-            self.assertIsNotNone(item.deleted_at)
+        users = User.all_objects.filter(name__startswith="Axe User")
+        self.assertEqual(users.count(), 2)
+        for u in users:
+            self.assertIsNotNone(u.deleted_at)
 
     def test_instance_hard_delete(self):
-        item = Item.objects.create(name="Bow")
-        item_id = item.id
+        user = User.objects.create(name="Bow User")
+        user_id = user.id
 
         # Perform hard delete
-        deleted_count, _details = item.hard_delete()
+        deleted_count, _details = user.hard_delete()
         self.assertEqual(deleted_count, 1)
 
         # Verify it is completely gone
-        self.assertFalse(Item.objects.filter(id=item_id).exists())
-        self.assertFalse(Item.all_objects.filter(id=item_id).exists())
+        self.assertFalse(User.objects.filter(id=user_id).exists())
+        self.assertFalse(User.all_objects.filter(id=user_id).exists())
 
     def test_queryset_hard_delete(self):
-        Item.objects.create(name="Arrow")
-        Item.objects.create(name="Arrow")
+        User.objects.create(name="Arrow User 1")
+        User.objects.create(name="Arrow User 2")
 
         # Perform bulk hard delete
-        deleted_count, _details = Item.objects.filter(name="Arrow").hard_delete()
+        deleted_count, _details = User.objects.filter(
+            name__startswith="Arrow User"
+        ).hard_delete()
         self.assertEqual(deleted_count, 2)
 
         # Verify completely gone
-        self.assertEqual(Item.all_objects.filter(name="Arrow").count(), 0)
+        self.assertEqual(
+            User.all_objects.filter(name__startswith="Arrow User").count(), 0
+        )
 
     def test_cascade_soft_delete(self):
         # Verify initial relationships exist

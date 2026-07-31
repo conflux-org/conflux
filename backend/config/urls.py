@@ -17,10 +17,8 @@ Including another URLconf
 
 from django.urls import path
 
-from api.views import item_list, test_api, verify_credentials
+from api.auth import verify_password
 
 urlpatterns = [
-    path("api/test/", test_api, name="test_api"),
-    path("api/items/", item_list, name="item_list"),
-    path("api/auth/verify/", verify_credentials, name="verify_credentials"),
+    path("api/auth/verify/", verify_password, name="verify_password"),
 ]
