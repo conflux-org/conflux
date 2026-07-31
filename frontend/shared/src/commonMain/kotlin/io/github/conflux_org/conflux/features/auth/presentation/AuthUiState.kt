@@ -1,6 +1,6 @@
 package io.github.conflux_org.conflux.features.auth.presentation
 
-data class LoginUiState(
+data class AuthUiState(
     val username: String = "",
     val password: String = "",
     val isLoginLoading: Boolean = false,

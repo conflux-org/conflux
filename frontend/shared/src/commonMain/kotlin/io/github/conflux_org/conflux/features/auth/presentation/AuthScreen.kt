@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -38,15 +40,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
-
 enum class AuthPage {
     LOGIN, SIGN_UP, FORGOT_PASSWORD
 }
 
 @Composable
-fun LoginScreen(viewModel: LoginViewModel) {
+fun AuthScreen(viewModel: AuthViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var currentPage by remember { mutableStateOf(AuthPage.LOGIN) }
     when (currentPage) {
@@ -72,8 +71,8 @@ fun LoginScreen(viewModel: LoginViewModel) {
 
 @Composable
 private fun LoginPage(
-    state: LoginUiState,
-    onIntent: (LoginIntent) -> Unit,
+    state: AuthUiState,
+    onIntent: (AuthIntent) -> Unit,
     onForgotPasswordClick: () -> Unit,
     onSignUpClick: () -> Unit
 ) {
@@ -119,7 +118,7 @@ private fun LoginPage(
 
                 OutlinedTextField(
                     value = state.username,
-                    onValueChange = { onIntent(LoginIntent.UsernameChanged(it)) },
+                    onValueChange = { onIntent(AuthIntent.UsernameChanged(it)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
@@ -134,7 +133,7 @@ private fun LoginPage(
 
                 OutlinedTextField(
                     value = state.password,
-                    onValueChange = { onIntent(LoginIntent.PasswordChanged(it)) },
+                    onValueChange = { onIntent(AuthIntent.PasswordChanged(it)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     visualTransformation = if (showPassword) {
@@ -183,7 +182,7 @@ private fun LoginPage(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = { onIntent(LoginIntent.Login) },
+                    onClick = { onIntent(AuthIntent.Login) },
                     enabled = state.isLoginButtonEnabled,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
@@ -214,7 +213,6 @@ private fun LoginPage(
     }
 }
 
-
 /**
  * 註冊完整頁面
  */
@@ -222,33 +220,13 @@ private fun LoginPage(
 private fun SignUpPage(
     onBackClick: () -> Unit, onSignUpSuccess: () -> Unit
 ) {
-    var userName by remember {
-        mutableStateOf("")
-    }
-
-    var userId by remember {
-        mutableStateOf("")
-    }
-
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var password by remember {
-        mutableStateOf("")
-    }
-
-    var confirmPassword by remember {
-        mutableStateOf("")
-    }
-
-    var showPassword by remember {
-        mutableStateOf(false)
-    }
-
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
+    var userName by remember { mutableStateOf("") }
+    var userId by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
@@ -267,9 +245,7 @@ private fun SignUpPage(
                 color = Color.White
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "請填寫以下資料以建立帳號",
@@ -277,82 +253,51 @@ private fun SignUpPage(
                 color = Color(0xFF9A9A9A)
             )
 
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = userName,
-
                     onValueChange = {
                         userName = it
                         errorMessage = ""
                     },
-
-                    label = {
-                        Text("用戶名稱")
-                    },
-
+                    label = { Text("用戶名稱") },
                     modifier = Modifier.weight(2f),
-
                     singleLine = true,
-
                     colors = darkTextFieldColors()
                 )
 
-                Spacer(
-                    modifier = Modifier.width(12.dp)
-                )
+                Spacer(modifier = Modifier.width(12.dp))
 
                 OutlinedTextField(
                     value = userId,
-
                     onValueChange = {
                         userId = it
                         errorMessage = ""
                     },
-
-                    label = {
-                        Text("#ID")
-                    },
-
+                    label = { Text("#ID") },
                     modifier = Modifier.weight(1f),
-
                     singleLine = true,
-
                     colors = darkTextFieldColors()
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = email,
-
                 onValueChange = {
                     email = it
                     errorMessage = ""
                 },
-
-                label = {
-                    Text("Email")
-                },
-
+                label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
-
                 singleLine = true,
-
                 colors = darkTextFieldColors()
             )
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = password,
@@ -363,18 +308,11 @@ private fun SignUpPage(
                 label = { Text("密碼") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                visualTransformation = if (showPassword) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 colors = darkTextFieldColors()
             )
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = confirmPassword,
@@ -382,16 +320,10 @@ private fun SignUpPage(
                     confirmPassword = it
                     errorMessage = ""
                 },
-                label = {
-                    Text("再次輸入密碼")
-                },
+                label = { Text("再次輸入密碼") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                visualTransformation = if (showPassword) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 colors = darkTextFieldColors()
             )
 
@@ -399,9 +331,8 @@ private fun SignUpPage(
                 modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
-                    checked = showPassword, onCheckedChange = {
-                        showPassword = it
-                    }, colors = CheckboxDefaults.colors(
+                    checked = showPassword, onCheckedChange = { showPassword = it },
+                    colors = CheckboxDefaults.colors(
                         checkedColor = Color(0xFF4A4A91),
                         uncheckedColor = Color.White,
                         checkmarkColor = Color.White
@@ -427,43 +358,16 @@ private fun SignUpPage(
             Button(
                 onClick = {
                     when {
-                        userName.isBlank() -> {
-                            errorMessage = "請輸入用戶名稱"
-                        }
-
-                        userId.isBlank() -> {
-                            errorMessage = "請輸入 ID"
-                        }
-
-                        email.isBlank() -> {
-                            errorMessage = "請輸入 Email"
-                        }
-
-                        password.isBlank() -> {
-                            errorMessage = "請輸入密碼"
-                        }
-
-                        password.length < 6 -> {
-                            errorMessage = "密碼至少需要 6 個字元"
-                        }
-
-                        confirmPassword.isBlank() -> {
-                            errorMessage = "請再次輸入密碼"
-                        }
-
-                        password != confirmPassword -> {
-                            errorMessage = "兩次輸入的密碼不一致"
-                        }
-
+                        userName.isBlank() -> errorMessage = "請輸入用戶名稱"
+                        userId.isBlank() -> errorMessage = "請輸入 ID"
+                        email.isBlank() -> errorMessage = "請輸入 Email"
+                        password.isBlank() -> errorMessage = "請輸入密碼"
+                        password.length < 6 -> errorMessage = "密碼至少需要 6 個字元"
+                        confirmPassword.isBlank() -> errorMessage = "請再次輸入密碼"
+                        password != confirmPassword -> errorMessage = "兩次輸入的密碼不一致"
                         else -> {
                             errorMessage = ""
-
-                            // TODO：之後在這裡呼叫註冊 API
                             println("註冊成功")
-                            println("用戶名稱：$userName")
-                            println("用戶 ID：$userId")
-                            println("Email：$email")
-
                             onSignUpSuccess()
                         }
                     }
@@ -488,17 +392,9 @@ private fun SignUpPage(
 private fun ForgotPasswordPage(
     onBackClick: () -> Unit
 ) {
-    var email by remember {
-        mutableStateOf("")
-    }
-
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
-
-    var successMessage by remember {
-        mutableStateOf("")
-    }
+    var email by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+    var successMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
@@ -517,9 +413,7 @@ private fun ForgotPasswordPage(
                 color = Color.White
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "請輸入註冊帳號時使用的 Email",
@@ -527,9 +421,7 @@ private fun ForgotPasswordPage(
                 color = Color(0xFF9A9A9A)
             )
 
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
+            Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
                 value = email,
@@ -569,32 +461,20 @@ private fun ForgotPasswordPage(
                         successMessage = ""
                     } else {
                         errorMessage = ""
-
-                        // TODO：之後在這裡呼叫寄送重設密碼信件的 API
                         println("寄送重設密碼信件至：$email")
-
                         successMessage = "重設密碼信件已寄出"
                     }
                 },
-
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-
                 shape = RoundedCornerShape(12.dp),
-
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91))
             ) {
-                Text(
-                    text = "寄送重設密碼信件", style = MaterialTheme.typography.titleMedium
-                )
+                Text(text = "寄送重設密碼信件", style = MaterialTheme.typography.titleMedium)
             }
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-            TextButton(
-                onClick = onBackClick
-            ) {
+            TextButton(onClick = onBackClick) {
                 Text("返回登入")
             }
         }
@@ -614,9 +494,9 @@ private fun darkTextFieldColors() = OutlinedTextFieldDefaults.colors(
 
 @Preview
 @Composable
-private fun LoginScreenPreview() {
+private fun AuthScreenPreview() {
     LoginPage(
-        state = LoginUiState(),
+        state = AuthUiState(),
         onIntent = {},
         onForgotPasswordClick = {},
         onSignUpClick = {}
