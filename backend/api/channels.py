@@ -12,9 +12,7 @@ def get_channel_messages(request, channel_id):
         )
 
     if not Channel.objects.filter(id=channel_id).exists():
-        return JsonResponse(
-            {"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND
-        )
+        return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
 
     messages = Message.objects.filter(channel_id=channel_id).select_related("author")
 

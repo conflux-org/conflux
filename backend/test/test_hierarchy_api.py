@@ -107,9 +107,7 @@ class HierarchyAPITestCase(TestCase):
         msg1 = data[0]
         self.assertEqual(msg1["id"], self.message1.id)
         self.assertEqual(msg1["content"], "Hello in general")
-        self.assertEqual(
-            msg1["author"], {"id": self.user1.id, "name": self.user1.name}
-        )
+        self.assertEqual(msg1["author"], {"id": self.user1.id, "name": self.user1.name})
 
     def test_get_channel_messages_not_found(self):
         url = reverse("channel-messages", kwargs={"channel_id": 999999})

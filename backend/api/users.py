@@ -12,9 +12,7 @@ def get_user_guilds(request, user_id):
         )
 
     if not User.objects.filter(id=user_id).exists():
-        return JsonResponse(
-            {"error": "User not found"}, status=HTTPStatus.NOT_FOUND
-        )
+        return JsonResponse({"error": "User not found"}, status=HTTPStatus.NOT_FOUND)
 
     guilds = Guild.objects.filter(
         guildmember__user_id=user_id,
