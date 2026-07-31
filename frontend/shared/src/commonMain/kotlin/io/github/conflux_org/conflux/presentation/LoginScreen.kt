@@ -37,76 +37,41 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-
-// 三個頁面的名稱
 private const val PAGE_LOGIN = "login"
 private const val PAGE_SIGN_UP = "signup"
 private const val PAGE_FORGOT_PASSWORD = "forgot"
 
-
-/**
- * 負責管理目前要顯示哪一個頁面。
- *
- * login  -> 登入頁
- * signup -> 註冊頁
- * forgot -> 忘記密碼頁
- */
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit = {}
 ) {
-    var currentPage by remember {
-        mutableStateOf(PAGE_LOGIN)
-    }
+    var currentPage by remember { mutableStateOf(PAGE_LOGIN) }
 
     MaterialTheme {
-        if (currentPage == PAGE_LOGIN) {
+        when (currentPage) {
+            PAGE_LOGIN -> {
+                LoginPage(
+                    onLoginSuccess = onLoginSuccess,
+                    onForgotPasswordClick = { currentPage = PAGE_FORGOT_PASSWORD },
+                    onSignUpClick = { currentPage = PAGE_SIGN_UP })
+            }
 
-            LoginPage(
-                onLoginSuccess = onLoginSuccess,
+            PAGE_SIGN_UP -> {
+                SignUpPage(
+                    onBackClick = { currentPage = PAGE_LOGIN },
+                    onSignUpSuccess = { currentPage = PAGE_LOGIN })
+            }
 
-                onForgotPasswordClick = {
-                    currentPage = PAGE_FORGOT_PASSWORD
-                },
-
-                onSignUpClick = {
-                    currentPage = PAGE_SIGN_UP
-                }
-            )
-
-        } else if (currentPage == PAGE_SIGN_UP) {
-
-            SignUpPage(
-                onBackClick = {
-                    currentPage = PAGE_LOGIN
-                },
-
-                onSignUpSuccess = {
-                    // 註冊成功後回到登入畫面
-                    currentPage = PAGE_LOGIN
-                }
-            )
-
-        } else {
-
-            ForgotPasswordPage(
-                onBackClick = {
-                    currentPage = PAGE_LOGIN
-                }
-            )
+            else -> {
+                ForgotPasswordPage(onBackClick = { currentPage = PAGE_LOGIN })
+            }
         }
     }
 }
 
-
-/**
- * 登入頁面
- */
 @Composable
 private fun LoginPage(
-    onLoginSuccess: () -> Unit,
-    onForgotPasswordClick: () -> Unit,
-    onSignUpClick: () -> Unit
+    onLoginSuccess: () -> Unit, onForgotPasswordClick: () -> Unit, onSignUpClick: () -> Unit
 ) {
     var account by remember {
         mutableStateOf("")
@@ -125,23 +90,14 @@ private fun LoginPage(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF00FFF4))
-            .safeContentPadding(),
+        modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 420.dp)
-                .background(
-                    color = Color(0xFF2E2E2E),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp).background(
+                color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp)
+            ).padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "登入你的帳號",
@@ -165,13 +121,10 @@ private fun LoginPage(
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
             ) {
                 Text(
-                    text = "帳號",
-                    color = Color.White
+                    text = "帳號", color = Color.White
                 )
 
                 Spacer(
@@ -200,8 +153,7 @@ private fun LoginPage(
                 )
 
                 Text(
-                    text = "密碼",
-                    color = Color.White
+                    text = "密碼", color = Color.White
                 )
 
                 Spacer(
@@ -250,13 +202,11 @@ private fun LoginPage(
                     )
 
                     Text(
-                        text = "顯示密碼",
-                        color = Color.White,
+                        text = "顯示密碼", color = Color.White,
 
                         modifier = Modifier.clickable {
                             showPassword = !showPassword
-                        }
-                    )
+                        })
 
                     Spacer(
                         modifier = Modifier.weight(1f)
@@ -273,9 +223,7 @@ private fun LoginPage(
                     Text(
                         text = errorMessage,
 
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
 
                         color = MaterialTheme.colorScheme.error
                     )
@@ -296,8 +244,7 @@ private fun LoginPage(
                                 errorMessage = "請輸入密碼"
                             }
 
-                            account == "admin" &&
-                                    password == "1234" -> {
+                            account == "admin" && password == "1234" -> {
 
                                 errorMessage = ""
 
@@ -313,9 +260,7 @@ private fun LoginPage(
                         }
                     },
 
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
 
                     shape = RoundedCornerShape(12.dp),
 
@@ -324,8 +269,7 @@ private fun LoginPage(
                     )
                 ) {
                     Text(
-                        text = "登入",
-                        style = MaterialTheme.typography.titleMedium
+                        text = "登入", style = MaterialTheme.typography.titleMedium
                     )
                 }
             }
@@ -338,8 +282,7 @@ private fun LoginPage(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "還沒有帳號？",
-                    color = Color.White
+                    text = "還沒有帳號？", color = Color.White
                 )
 
                 TextButton(
@@ -358,8 +301,7 @@ private fun LoginPage(
  */
 @Composable
 private fun SignUpPage(
-    onBackClick: () -> Unit,
-    onSignUpSuccess: () -> Unit
+    onBackClick: () -> Unit, onSignUpSuccess: () -> Unit
 ) {
     var userName by remember {
         mutableStateOf("")
@@ -390,23 +332,14 @@ private fun SignUpPage(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF00FFF4))
-            .safeContentPadding(),
+        modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 520.dp)
-                .background(
-                    color = Color(0xFF2E2E2E),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth().widthIn(max = 520.dp).background(
+                color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp)
+            ).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "註冊新帳號",
@@ -557,8 +490,7 @@ private fun SignUpPage(
             )
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
                     checked = showPassword,
@@ -575,22 +507,18 @@ private fun SignUpPage(
                 )
 
                 Text(
-                    text = "顯示密碼",
-                    color = Color.White,
+                    text = "顯示密碼", color = Color.White,
 
                     modifier = Modifier.clickable {
                         showPassword = !showPassword
-                    }
-                )
+                    })
             }
 
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
 
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
 
                     color = MaterialTheme.colorScheme.error
                 )
@@ -645,9 +573,7 @@ private fun SignUpPage(
                     }
                 },
 
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
 
                 shape = RoundedCornerShape(12.dp),
 
@@ -656,8 +582,7 @@ private fun SignUpPage(
                 )
             ) {
                 Text(
-                    text = "註冊",
-                    style = MaterialTheme.typography.titleMedium
+                    text = "註冊", style = MaterialTheme.typography.titleMedium
                 )
             }
 
@@ -674,10 +599,6 @@ private fun SignUpPage(
     }
 }
 
-
-/**
- * 忘記密碼完整頁面
- */
 @Composable
 private fun ForgotPasswordPage(
     onBackClick: () -> Unit
@@ -695,21 +616,14 @@ private fun ForgotPasswordPage(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF00FFF4))
-            .safeContentPadding(),
+        modifier = Modifier.fillMaxSize().background(Color(0xFF00FFF4)).safeContentPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
                 .widthIn(max = 420.dp)
-                .background(
-                    color = Color(0xFF2E2E2E),
-                    shape = RoundedCornerShape(16.dp)
-                )
+                .background(color = Color(0xFF2E2E2E), shape = RoundedCornerShape(16.dp))
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -757,11 +671,7 @@ private fun ForgotPasswordPage(
             if (errorMessage.isNotEmpty()) {
                 Text(
                     text = errorMessage,
-
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -769,18 +679,12 @@ private fun ForgotPasswordPage(
             if (successMessage.isNotEmpty()) {
                 Text(
                     text = successMessage,
-
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     color = Color(0xFF65D46E)
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
@@ -797,19 +701,14 @@ private fun ForgotPasswordPage(
                     }
                 },
 
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
 
                 shape = RoundedCornerShape(12.dp),
 
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4A4A91)
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A4A91))
             ) {
                 Text(
-                    text = "寄送重設密碼信件",
-                    style = MaterialTheme.typography.titleMedium
+                    text = "寄送重設密碼信件", style = MaterialTheme.typography.titleMedium
                 )
             }
 
@@ -826,27 +725,20 @@ private fun ForgotPasswordPage(
     }
 }
 
-
-/**
- * 三個頁面共用的文字輸入框顏色。
- */
 @Composable
-private fun darkTextFieldColors() =
-    OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White,
-        focusedLabelColor = Color.White,
-        unfocusedLabelColor = Color(0xFFB5B5B5),
-        focusedBorderColor = Color(0xFF6C6CB5),
-        unfocusedBorderColor = Color(0xFF8A8A8A),
-        cursorColor = Color.White
-    )
-
+private fun darkTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Color.White,
+    unfocusedTextColor = Color.White,
+    focusedLabelColor = Color.White,
+    unfocusedLabelColor = Color(0xFFB5B5B5),
+    focusedBorderColor = Color(0xFF6C6CB5),
+    unfocusedBorderColor = Color(0xFF8A8A8A),
+    cursorColor = Color.White
+)
 
 @Preview
 @Composable
 private fun LoginScreenPreview() {
     LoginScreen(
-        onLoginSuccess = {}
-    )
+        onLoginSuccess = {})
 }
