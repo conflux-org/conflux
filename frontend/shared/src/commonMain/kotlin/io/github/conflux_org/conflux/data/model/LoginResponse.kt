@@ -1,4 +1,4 @@
-package io.github.conflux_org.conflux.features.auth.data.model
+package io.github.conflux_org.conflux.data.model
 
 import kotlinx.serialization.Serializable
 

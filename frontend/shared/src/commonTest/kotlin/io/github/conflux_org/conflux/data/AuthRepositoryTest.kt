@@ -1,7 +1,7 @@
-package io.github.conflux_org.conflux.features.auth.data
+package io.github.conflux_org.conflux.data
 
 import io.github.conflux_org.conflux.domain.model.User
-import io.github.conflux_org.conflux.features.auth.domain.repository.AuthRepository
+import io.github.conflux_org.conflux.domain.repository.AuthRepository
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

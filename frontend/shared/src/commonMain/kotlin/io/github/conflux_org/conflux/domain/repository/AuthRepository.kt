@@ -1,4 +1,4 @@
-package io.github.conflux_org.conflux.features.auth.domain.repository
+package io.github.conflux_org.conflux.domain.repository
 
 import io.github.conflux_org.conflux.domain.model.User
 

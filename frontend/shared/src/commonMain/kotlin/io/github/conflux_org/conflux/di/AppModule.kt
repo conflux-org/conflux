@@ -1,8 +1,8 @@
 package io.github.conflux_org.conflux.di
 
 import io.github.conflux_org.conflux.core.network.HttpClientFactory
-import io.github.conflux_org.conflux.features.auth.data.repository.AuthRepositoryImpl
-import io.github.conflux_org.conflux.features.auth.domain.repository.AuthRepository
+import io.github.conflux_org.conflux.data.repository.AuthRepositoryImpl
+import io.github.conflux_org.conflux.domain.repository.AuthRepository
 import io.github.conflux_org.conflux.features.auth.presentation.AuthViewModel
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher

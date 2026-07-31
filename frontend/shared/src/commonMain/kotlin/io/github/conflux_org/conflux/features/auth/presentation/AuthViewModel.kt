@@ -1,8 +1,8 @@
 package io.github.conflux_org.conflux.features.auth.presentation
 
 import androidx.lifecycle.ViewModel
-import io.github.conflux_org.conflux.features.auth.data.repository.AuthRepositoryImpl
-import io.github.conflux_org.conflux.features.auth.domain.repository.AuthRepository
+import io.github.conflux_org.conflux.data.repository.AuthRepositoryImpl
+import io.github.conflux_org.conflux.domain.repository.AuthRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

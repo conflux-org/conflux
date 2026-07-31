@@ -1,10 +1,10 @@
-package io.github.conflux_org.conflux.features.auth.data.repository
+package io.github.conflux_org.conflux.data.repository
 
 import io.github.conflux_org.conflux.core.network.HttpClientFactory
 import io.github.conflux_org.conflux.domain.model.User
-import io.github.conflux_org.conflux.features.auth.data.model.LoginRequest
-import io.github.conflux_org.conflux.features.auth.data.model.LoginResponse
-import io.github.conflux_org.conflux.features.auth.domain.repository.AuthRepository
+import io.github.conflux_org.conflux.data.model.LoginRequest
+import io.github.conflux_org.conflux.data.model.LoginResponse
+import io.github.conflux_org.conflux.domain.repository.AuthRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
