@@ -27,20 +27,15 @@ class AuthRepositoryImpl(
                     contentType(ContentType.Application.Json)
                     setBody(LoginRequest(username = username, password = password))
                 }
+            val body = response.body<LoginResponse>()
             if (response.status.isSuccess()) {
-                val body = response.body<LoginResponse>()
-                val isSuccess =
-                    body.success
-                        ?: (body.status?.lowercase() != "error" && body.status?.lowercase() != "fail")
-                if (isSuccess && body.user != null) {
-                    Result.success(body.user)
-                } else if (isSuccess) {
-                    Result.success(User(id = username.toLongOrNull() ?: 0L, name = username))
+                if (body.id != null && body.name != null) {
+                    Result.success(User(id = body.id, name = body.name))
                 } else {
-                    Result.failure(Exception(body.message ?: "帳號或密碼錯誤，登入失敗"))
+                    Result.failure(Exception(body.error ?: "登入失敗"))
                 }
             } else {
-                Result.failure(Exception("伺服器回應失敗 (${response.status.value})"))
+                Result.failure(Exception(body.error ?: "登入失敗 (${response.status.value})"))
             }
         } catch (e: Exception) {
             Result.failure(e)
