@@ -33,8 +33,14 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
+    "rest_framework",
     "api",
 ]
+
+REST_FRAMEWORK = {
+    "UNAUTHENTICATED_USER": None,
+    "UNAUTHENTICATED_TOKEN": None,
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
