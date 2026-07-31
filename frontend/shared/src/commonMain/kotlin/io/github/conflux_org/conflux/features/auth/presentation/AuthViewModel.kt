@@ -42,14 +42,13 @@ class AuthViewModel(
 
         CoroutineScope(mainDispatcher).launch {
             try {
-                val user = authRepository.login(username, password)
-                if (user != null) {
-                    onLoginSuccess?.invoke(user.id)
-                } else {
-                    _uiState.update { it.copy(errorMessage = "帳號或密碼錯誤，登入失敗") }
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.message ?: "登入失敗") }
+                authRepository
+                    .login(username, password)
+                    .onSuccess { user ->
+                        onLoginSuccess?.invoke(user.id)
+                    }.onFailure { error ->
+                        _uiState.update { it.copy(errorMessage = error.message ?: "登入失敗") }
+                    }
             } finally {
                 _uiState.update { it.copy(isLoginLoading = false) }
             }

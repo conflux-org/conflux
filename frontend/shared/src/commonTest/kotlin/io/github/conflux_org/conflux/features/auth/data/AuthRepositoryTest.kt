@@ -5,7 +5,7 @@ import io.github.conflux_org.conflux.features.auth.domain.repository.AuthReposit
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class FakeAuthRepository(
     private val shouldSucceed: Boolean,
@@ -13,34 +13,41 @@ class FakeAuthRepository(
     override suspend fun login(
         username: String,
         password: String,
-    ): User? {
-        if (username.isBlank() || password.isBlank()) return null
-        return if (shouldSucceed) User(id = "1", name = username) else null
+    ): Result<User> {
+        if (username.isBlank() || password.isBlank()) {
+            return Result.failure(IllegalArgumentException("帳號密碼不可為空"))
+        }
+        return if (shouldSucceed) {
+            Result.success(User(id = "1", name = username))
+        } else {
+            Result.failure(Exception("帳號或密碼錯誤"))
+        }
     }
 }
 
 class AuthRepositoryTest {
     @Test
-    fun login_withValidCredentials_returnsUser() =
+    fun login_withValidCredentials_returnsSuccessUser() =
         runTest {
             val repository = FakeAuthRepository(shouldSucceed = true)
             val result = repository.login("user", "pass")
-            assertEquals(User(id = "1", name = "user"), result)
+            assertTrue(result.isSuccess)
+            assertEquals(User(id = "1", name = "user"), result.getOrNull())
         }
 
     @Test
-    fun login_withInvalidCredentials_returnsNull() =
+    fun login_withInvalidCredentials_returnsFailure() =
         runTest {
             val repository = FakeAuthRepository(shouldSucceed = false)
             val result = repository.login("user", "pass")
-            assertNull(result)
+            assertTrue(result.isFailure)
         }
 
     @Test
-    fun login_withEmptyUsername_returnsNull() =
+    fun login_withEmptyUsername_returnsFailure() =
         runTest {
             val repository = FakeAuthRepository(shouldSucceed = true)
             val result = repository.login("", "pass")
-            assertNull(result)
+            assertTrue(result.isFailure)
         }
 }

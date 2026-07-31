@@ -20,7 +20,7 @@ class AuthRepositoryImpl(
     override suspend fun login(
         username: String,
         password: String,
-    ): User? =
+    ): Result<User> =
         try {
             val response =
                 httpClient.post("$baseUrl/api/auth/login") {
@@ -28,25 +28,21 @@ class AuthRepositoryImpl(
                     setBody(LoginRequest(username = username, password = password))
                 }
             if (response.status.isSuccess()) {
-                try {
-                    val body = response.body<LoginResponse>()
-                    val isSuccess =
-                        body.success
-                            ?: (body.status?.lowercase() != "error" && body.status?.lowercase() != "fail")
-                    if (isSuccess) {
-                        val userId = body.id ?: body.user?.id ?: username
-                        val userName = body.name ?: body.user?.name ?: username
-                        User(id = userId, name = userName)
-                    } else {
-                        null
-                    }
-                } catch (_: Exception) {
-                    User(id = username, name = username)
+                val body = response.body<LoginResponse>()
+                val isSuccess =
+                    body.success
+                        ?: (body.status?.lowercase() != "error" && body.status?.lowercase() != "fail")
+                if (isSuccess) {
+                    val userId = body.id ?: body.user?.id ?: username
+                    val userName = body.name ?: body.user?.name ?: username
+                    Result.success(User(id = userId, name = userName))
+                } else {
+                    Result.failure(Exception(body.message ?: "帳號或密碼錯誤，登入失敗"))
                 }
             } else {
-                null
+                Result.failure(Exception("伺服器回應失敗 (${response.status.value})"))
             }
-        } catch (_: Exception) {
-            null
+        } catch (e: Exception) {
+            Result.failure(e)
         }
 }
