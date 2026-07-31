@@ -2,7 +2,6 @@ import json
 from http import HTTPStatus
 
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 from .models import Item
 
@@ -12,7 +11,6 @@ def test_api(request):
     return JsonResponse({"status": "ok", "message": "API test successful"})
 
 
-@csrf_exempt
 def item_list(request):
     if request.method == "GET":
         items = list(Item.objects.values("id", "name", "description", "created_at"))

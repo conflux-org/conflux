@@ -3,10 +3,9 @@ from http import HTTPStatus
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Item
+from api.models import Item
 
 
-# Create your tests here.
 class APITestCase(TestCase):
     def test_api_returns_ok_response(self):
         url = reverse("test_api")
