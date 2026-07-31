@@ -7,7 +7,7 @@ from api.models import Channel, Guild
 
 
 @require_http_methods(["GET"])
-def get_guild_channels(request, guild_id):
+def get_channels_by_guild_id(request, guild_id):
     if not Guild.objects.filter(id=guild_id).exists():
         return JsonResponse({"error": "Guild not found"}, status=HTTPStatus.NOT_FOUND)
 

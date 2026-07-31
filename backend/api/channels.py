@@ -7,7 +7,7 @@ from api.models import Channel, Message
 
 
 @require_http_methods(["GET"])
-def get_channel_messages(request, channel_id):
+def get_messages_by_channel_id(request, channel_id):
     if not Channel.objects.filter(id=channel_id).exists():
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
 

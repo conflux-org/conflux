@@ -8,7 +8,7 @@ from api.models import Guild, User
 
 
 @require_http_methods(["GET"])
-def get_user_guilds(request, user_id):
+def get_guilds_by_user_id(request, user_id):
     if not User.objects.filter(id=user_id).exists():
         return JsonResponse({"error": "User not found"}, status=HTTPStatus.NOT_FOUND)
 
@@ -22,29 +22,29 @@ def get_user_guilds(request, user_id):
 
 
 @require_http_methods(["POST"])
-def add_user_account(request):
+def sign_up(request):
 
     try:
         data = json.loads(request.body)
     except (json.JSONDecodeError, TypeError):
         return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
 
-    user_name = data.get("username")
+    username = data.get("username")
     password = data.get("password")
 
-    if not user_name or not password:
+    if not username or not password:
         return JsonResponse(
             {"error": "Missing required field: username or password"},
             status=HTTPStatus.BAD_REQUEST,
         )
 
-    if User.objects.filter(name=user_name).exists():
+    if User.objects.filter(name=username).exists():
         return JsonResponse(
             {"error": "User with this name already exists"},
             status=HTTPStatus.CONFLICT,
         )
 
-    user = User.objects.create(name=user_name, password=password)
+    user = User.objects.create(name=username, password=password)
 
     return JsonResponse(
         {"id": user.id, "name": user.name},
