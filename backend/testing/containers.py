@@ -50,7 +50,7 @@ class BaseProvider[C: DockerContainer]:
 
 class PostgresProvider(BaseProvider[PostgresContainer]):
     image: str = "postgres:16"
-    engine = "django.db.backends.postgresql"
+    engine = "api.db_backend.postgresql"
     alias = "default"
 
     def __init__(self, image: str | None = None, alias: str | None = None):
