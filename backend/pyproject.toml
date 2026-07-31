@@ -16,7 +16,6 @@ requires-python = ">=3.12"
 dependencies = [
     "Django==6.0.7",
     "psycopg[binary]>=3.2",
-    "djangorestframework>=3.15.0",
 ]
 
 [project.optional-dependencies]
