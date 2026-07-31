@@ -22,10 +22,12 @@ import conflux.shared.generated.resources.Res
 import conflux.shared.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 
+
 @Composable
 @Preview
 @Suppress("ktlint:standard:function-naming")
 fun App() {
+
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
         Column(
