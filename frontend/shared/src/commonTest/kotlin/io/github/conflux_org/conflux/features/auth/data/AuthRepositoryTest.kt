@@ -18,7 +18,7 @@ class FakeAuthRepository(
             return Result.failure(IllegalArgumentException("帳號密碼不可為空"))
         }
         return if (shouldSucceed) {
-            Result.success(User(id = "1", name = username))
+            Result.success(User(id = 1L, name = username))
         } else {
             Result.failure(Exception("帳號或密碼錯誤"))
         }
@@ -32,7 +32,7 @@ class AuthRepositoryTest {
             val repository = FakeAuthRepository(shouldSucceed = true)
             val result = repository.login("user", "pass")
             assertTrue(result.isSuccess)
-            assertEquals(User(id = "1", name = "user"), result.getOrNull())
+            assertEquals(User(id = 1L, name = "user"), result.getOrNull())
         }
 
     @Test

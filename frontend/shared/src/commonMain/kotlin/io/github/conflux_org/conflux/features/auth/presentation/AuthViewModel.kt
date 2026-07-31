@@ -59,6 +59,6 @@ class AuthViewModel(
         onNavigateToRegister?.invoke()
     }
 
-    var onLoginSuccess: ((userId: String) -> Unit)? = null
+    var onLoginSuccess: ((userId: Long) -> Unit)? = null
     var onNavigateToRegister: (() -> Unit)? = null
 }

@@ -33,8 +33,8 @@ class AuthRepositoryImpl(
                     body.success
                         ?: (body.status?.lowercase() != "error" && body.status?.lowercase() != "fail")
                 if (isSuccess) {
-                    val userId = body.id ?: body.user?.id ?: username
-                    val userName = body.name ?: body.user?.name ?: username
+                    val userId: Long = body.id ?: body.user?.id ?: (username.toLongOrNull() ?: 0L)
+                    val userName: String = body.name ?: body.user?.name ?: username
                     Result.success(User(id = userId, name = userName))
                 } else {
                     Result.failure(Exception(body.message ?: "帳號或密碼錯誤，登入失敗"))
