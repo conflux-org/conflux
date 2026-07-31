@@ -23,7 +23,7 @@ def verify_credentials(request):
     except (json.JSONDecodeError, TypeError):
         return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
 
-    account = data.get("name") or data.get("account") or data.get("username")
+    account = data.get("username")
     password = data.get("password")
 
     if not account or password is None:
