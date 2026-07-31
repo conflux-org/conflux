@@ -2,15 +2,12 @@ from http import HTTPStatus
 
 from django.http import JsonResponse
 
+from api.decorators import action
 from api.models import Channel, Guild
 
 
+@action(detail=True, methods=["GET"])
 def get_guild_channels(request, guild_id):
-    if request.method != "GET":
-        return JsonResponse(
-            {"error": "Method not allowed"}, status=HTTPStatus.METHOD_NOT_ALLOWED
-        )
-
     if not Guild.objects.filter(id=guild_id).exists():
         return JsonResponse({"error": "Guild not found"}, status=HTTPStatus.NOT_FOUND)
 

@@ -3,15 +3,12 @@ from http import HTTPStatus
 
 from django.http import JsonResponse
 
+from api.decorators import action
 from api.models import Guild, User
 
 
+@action(detail=True, methods=["GET"])
 def get_user_guilds(request, user_id):
-    if request.method != "GET":
-        return JsonResponse(
-            {"error": "Method not allowed"}, status=HTTPStatus.METHOD_NOT_ALLOWED
-        )
-
     if not User.objects.filter(id=user_id).exists():
         return JsonResponse({"error": "User not found"}, status=HTTPStatus.NOT_FOUND)
 
@@ -24,12 +21,8 @@ def get_user_guilds(request, user_id):
     return JsonResponse(data, safe=False, status=HTTPStatus.OK)
 
 
+@action(detail=False, methods=["POST"])
 def add_user_account(request):
-    if request.method != "POST":
-        return JsonResponse(
-            {"error": "Method not allowed"}, status=HTTPStatus.METHOD_NOT_ALLOWED
-        )
-
     try:
         data = json.loads(request.body)
     except (json.JSONDecodeError, TypeError):
