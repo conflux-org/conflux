@@ -1,12 +1,12 @@
 from http import HTTPStatus
 
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
-from api.decorators import action
 from api.models import Channel, Guild
 
 
-@action(detail=True, methods=["get"])
+@require_http_methods(["GET"])
 def get_guild_channels(request, guild_id):
     if not Guild.objects.filter(id=guild_id).exists():
         return JsonResponse({"error": "Guild not found"}, status=HTTPStatus.NOT_FOUND)

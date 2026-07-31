@@ -2,12 +2,12 @@ import json
 from http import HTTPStatus
 
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
-from api.decorators import action
 from api.models import Guild, User
 
 
-@action(detail=True, methods=["get"])
+@require_http_methods(["GET"])
 def get_user_guilds(request, user_id):
     if not User.objects.filter(id=user_id).exists():
         return JsonResponse({"error": "User not found"}, status=HTTPStatus.NOT_FOUND)
@@ -21,7 +21,7 @@ def get_user_guilds(request, user_id):
     return JsonResponse(data, safe=False, status=HTTPStatus.OK)
 
 
-@action(detail=False, methods=["post"])
+@require_http_methods(["POST"])
 def add_user_account(request):
 
     try:

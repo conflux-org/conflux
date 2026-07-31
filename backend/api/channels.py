@@ -1,12 +1,12 @@
 from http import HTTPStatus
 
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
-from api.decorators import action
 from api.models import Channel, Message
 
 
-@action(detail=True, methods=["get"])
+@require_http_methods(["GET"])
 def get_channel_messages(request, channel_id):
     if not Channel.objects.filter(id=channel_id).exists():
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)

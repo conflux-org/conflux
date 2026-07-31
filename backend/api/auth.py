@@ -2,12 +2,12 @@ import json
 from http import HTTPStatus
 
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
-from api.decorators import action
 from api.models import User
 
 
-@action(detail=False, methods=["post"])
+@require_http_methods(["POST"])
 def login(request):
     try:
         data = json.loads(request.body)
