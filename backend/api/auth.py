@@ -16,16 +16,16 @@ def login(request):
     except (json.JSONDecodeError, TypeError):
         return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
 
-    account = data.get("username")
+    username = data.get("username")
     password = data.get("password")
 
-    if not account or password is None:
+    if not username or password is None:
         return JsonResponse(
-            {"error": "Missing required field: name or password"},
+            {"error": "Missing required field: username or password"},
             status=HTTPStatus.BAD_REQUEST,
         )
 
-    user = User.objects.filter(name=account, password=password).first()
+    user = User.objects.filter(name=username, password=password).first()
     if not user:
         return JsonResponse(
             {"error": "Invalid username or password"},
