@@ -16,8 +16,21 @@ def container_stack():
 @pytest.fixture(scope="session")
 def django_db_setup(request, container_stack, django_db_blocker):
     from django.conf import settings
+    from django.db import connections
 
     container_stack.apply(settings)
+
+    if "settings" in connections.__dict__:
+        del connections.__dict__["settings"]
+    if "databases" in connections.__dict__:
+        del connections.__dict__["databases"]
+
+    for alias in list(connections):
+        try:
+            connections[alias].close()
+            del connections[alias]
+        except (AttributeError, KeyError):
+            pass
 
     verbosity = request.config.option.verbose
     with django_db_blocker.unblock():

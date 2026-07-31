@@ -75,7 +75,7 @@ if use_aiven and aiven_token:
     sslmode = query_params.get("sslmode", ["require"])[0]
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
+            "ENGINE": "api.db_backend.postgresql",
             "NAME": url.path.lstrip("/"),
             "USER": url.username,
             "PASSWORD": url.password,
@@ -89,7 +89,7 @@ if use_aiven and aiven_token:
 elif os.environ.get("DB_HOST"):
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
+            "ENGINE": "api.db_backend.postgresql",
             "NAME": os.environ.get("DB_NAME", "conflux"),
             "USER": os.environ.get("DB_USER", "postgres"),
             "PASSWORD": os.environ.get("DB_PASSWORD", "conflux_password"),

@@ -1,7 +1,114 @@
-from django.db import models
+import contextvars
+
+from django.db import models, transaction
+from django.db.models.deletion import Collector
+from django.utils import timezone
+
+_soft_delete_active = contextvars.ContextVar("soft_delete_active", default=True)
 
 
-class Item(models.Model):
+class SoftDeleteQuerySet(models.QuerySet):
+    def delete(self):
+        if _soft_delete_active.get():
+            using = self.db
+            collector = Collector(using=using, origin=self)
+            collector.collect(self)
+            return SoftDeleteModel._perform_soft_delete_for_collector(collector, using)
+        else:
+            return super().delete()
+
+    def hard_delete(self):
+        token = _soft_delete_active.set(False)
+        try:
+            return self.delete()
+        finally:
+            _soft_delete_active.reset(token)
+
+
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(
+            deleted_at__isnull=True
+        )
+
+
+class AllObjectsSoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        return SoftDeleteQuerySet(self.model, using=self._db)
+
+
+def prevent_fast_delete(sender, instance, **kwargs):
+    pass
+
+
+class SoftDeleteModel(models.Model):
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    objects = SoftDeleteManager()
+    all_objects = AllObjectsSoftDeleteManager()
+
+    class Meta:
+        abstract = True
+
+    def delete(self, using=None, keep_parents=False):
+        if _soft_delete_active.get():
+            using = using or self._state.db
+            collector = Collector(using=using)
+            collector.collect([self], keep_parents=keep_parents)
+            return self._perform_soft_delete_for_collector(collector, using)
+        else:
+            return super().delete(using=using, keep_parents=keep_parents)
+
+    def hard_delete(self, using=None, keep_parents=False):
+        token = _soft_delete_active.set(False)
+        try:
+            return self.delete(using=using, keep_parents=keep_parents)
+        finally:
+            _soft_delete_active.reset(token)
+
+    @classmethod
+    def _perform_soft_delete_for_collector(cls, collector, using):
+        now = timezone.now()
+        deleted_counter = {}
+
+        with transaction.atomic(using=using):
+            for model, instances in collector.data.items():
+                count = len(instances)
+                if count == 0:
+                    continue
+
+                model_label = model._meta.label
+                deleted_counter[model_label] = (
+                    deleted_counter.get(model_label, 0) + count
+                )
+
+                if issubclass(model, SoftDeleteModel):
+                    pk_list = [obj.pk for obj in instances]
+                    model.all_objects.filter(
+                        pk__in=pk_list, deleted_at__isnull=True
+                    ).update(deleted_at=now)
+                    for obj in instances:
+                        if obj.deleted_at is None:
+                            obj.deleted_at = now
+                else:
+                    sub_collector = Collector(using=using)
+                    sub_collector.data = {model: instances}
+                    sub_collector.delete()
+
+            for (model, field), (value, objs) in collector.field_updates.items():
+                if isinstance(objs, models.QuerySet):
+                    objs.update(**{field.name: value})
+                else:
+                    pk_list = [obj.pk for obj in objs]
+                    model.all_objects.filter(pk__in=pk_list).update(
+                        **{field.name: value}
+                    )
+
+        total_deleted = sum(deleted_counter.values())
+        return total_deleted, deleted_counter
+
+
+class Item(SoftDeleteModel):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -13,7 +120,7 @@ class Item(models.Model):
         return self.name
 
 
-class User(models.Model):
+class User(SoftDeleteModel):
     name = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -25,7 +132,7 @@ class User(models.Model):
         return self.name
 
 
-class Guild(models.Model):
+class Guild(SoftDeleteModel):
     name = models.CharField(max_length=255)
     owner = models.ForeignKey(
         User,
@@ -48,7 +155,7 @@ class Guild(models.Model):
         return self.name
 
 
-class GuildMember(models.Model):
+class GuildMember(SoftDeleteModel):
     guild = models.ForeignKey(
         Guild,
         on_delete=models.CASCADE,
@@ -66,7 +173,9 @@ class GuildMember(models.Model):
         db_table = "guild_members"
         constraints = (
             models.UniqueConstraint(
-                fields=["guild", "user"], name="uk_guild_members_guild_id_user_id"
+                fields=["guild", "user"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="uk_guild_members_guild_id_user_id",
             ),
         )
 
@@ -74,7 +183,7 @@ class GuildMember(models.Model):
         return f"{self.guild_id} - {self.user_id}"
 
 
-class Channel(models.Model):
+class Channel(SoftDeleteModel):
     name = models.CharField(max_length=255)
     guild = models.ForeignKey(
         Guild,
@@ -92,7 +201,7 @@ class Channel(models.Model):
         return self.name
 
 
-class Message(models.Model):
+class Message(SoftDeleteModel):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

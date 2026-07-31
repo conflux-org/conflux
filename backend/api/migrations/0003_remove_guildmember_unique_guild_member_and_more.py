@@ -10,6 +10,8 @@ def rename_unique_constraint(apps, schema_editor):
         schema_editor.execute('ALTER TABLE guild_members DROP CONSTRAINT IF EXISTS guild_members_guild_id_user_id_5f74972c_uniq;')
         # Drop unique_guild_member if it exists
         schema_editor.execute('ALTER TABLE guild_members DROP CONSTRAINT IF EXISTS unique_guild_member;')
+        # Drop target constraint if it exists to avoid collision
+        schema_editor.execute('ALTER TABLE guild_members DROP CONSTRAINT IF EXISTS uk_guild_members_guild_id_user_id;')
         # Add the new named unique constraint
         schema_editor.execute('ALTER TABLE guild_members ADD CONSTRAINT uk_guild_members_guild_id_user_id UNIQUE (guild_id, user_id);')
     else:
