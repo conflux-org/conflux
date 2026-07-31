@@ -34,6 +34,7 @@ services:
       - DB_PASSWORD=conflux_password
       - DB_HOST=db
       - DB_PORT=5432
+      - USE_AIVEN=${USE_AIVEN:-1}
       - aiven_TOKEN=${aiven_TOKEN}
     depends_on:
       db:
