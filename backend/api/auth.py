@@ -25,5 +25,11 @@ def login(request):
             status=HTTPStatus.BAD_REQUEST,
         )
 
-    is_valid = User.objects.filter(name=account, password=password).exists()
-    return JsonResponse({"valid": is_valid})
+    user = User.objects.filter(name=account, password=password).first()
+    if not user:
+        return JsonResponse(
+            {"error": "Invalid username or password"},
+            status=HTTPStatus.UNAUTHORIZED,
+        )
+
+    return JsonResponse({"id": user.id, "name": user.name})
