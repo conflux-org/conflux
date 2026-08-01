@@ -8,7 +8,12 @@ from api.models import User
 
 class LoginAPITestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create(name="testuser", password="secretpassword123")
+        from argon2 import PasswordHasher
+
+        p_hash = PasswordHasher()
+        password = p_hash.hash("secretpassword123")
+
+        self.user = User.objects.create(name="testuser", password=password)
         self.url = reverse("login")
 
     def test_login_success(self):
