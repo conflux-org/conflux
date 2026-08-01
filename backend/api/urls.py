@@ -5,7 +5,9 @@ from api import auth, channels, guilds, users
 urlpatterns = [
     path("auth/login/", auth.login, name="login"),
     path("users/", users.sign_up, name="add-user-account"),
-    path("users/<int:user_id>/guilds/", users.get_guilds_by_user_id, name="user-guilds"),
+    path(
+        "users/<int:user_id>/guilds/", users.get_guilds_by_user_id, name="user-guilds"
+    ),
     path(
         "guilds/<int:guild_id>/channels/",
         guilds.get_channels_by_guild_id,
