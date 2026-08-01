@@ -2,15 +2,13 @@ import json
 from http import HTTPStatus
 
 from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
-from .models import User
+from api.models import User
 
 
+@require_http_methods(["POST"])
 def login(request):
-    if request.method != "POST":
-        return JsonResponse(
-            {"error": "Method not allowed"}, status=HTTPStatus.METHOD_NOT_ALLOWED
-        )
     try:
         data = json.loads(request.body)
     except (json.JSONDecodeError, TypeError):
