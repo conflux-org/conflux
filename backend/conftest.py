@@ -1,4 +1,5 @@
 import os
+from contextlib import suppress
 
 import pytest
 from django.test.utils import setup_databases, teardown_databases
@@ -47,9 +48,5 @@ def django_db_setup(request, container_stack, django_db_blocker):
 
     yield
 
-    with django_db_blocker.unblock():
-        try:
-            teardown_databases(db_cfg, verbosity=verbosity)
-        except Exception:
-            pass
-
+    with django_db_blocker.unblock(), suppress(Exception):
+        teardown_databases(db_cfg, verbosity=verbosity)

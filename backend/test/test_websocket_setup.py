@@ -1,7 +1,8 @@
 import pytest
-from django.conf import settings
-from channels.routing import ProtocolTypeRouter
 from channels.layers import get_channel_layer
+from channels.routing import ProtocolTypeRouter
+from django.conf import settings
+
 from config.asgi import application
 
 
@@ -32,6 +33,6 @@ async def test_channel_layer_send_receive():
         response = await channel_layer.receive("test_channel")
         assert response["type"] == "test.message"
         assert response["text"] == "hello websocket"
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # If Redis container is not running locally, catch connection error gracefully
         assert "connecting to" in str(e).lower() or "connection" in str(e).lower()
