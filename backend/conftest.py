@@ -48,4 +48,8 @@ def django_db_setup(request, container_stack, django_db_blocker):
     yield
 
     with django_db_blocker.unblock():
-        teardown_databases(db_cfg, verbosity=verbosity)
+        try:
+            teardown_databases(db_cfg, verbosity=verbosity)
+        except Exception:
+            pass
+
