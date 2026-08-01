@@ -44,6 +44,19 @@ def sign_up(request):
             status=HTTPStatus.CONFLICT,
         )
 
+    from argon2 import PasswordHasher
+    from argon2.exceptions import HashingError
+
+    p_hash = PasswordHasher()
+
+    try:
+        password = p_hash.hash(password)
+    except HashingError:
+        return JsonResponse(
+            {"error": "Internal error for sign up user"},
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
     user = User.objects.create(name=username, password=password)
 
     return JsonResponse(
