@@ -23,11 +23,35 @@ def login(request):
             status=HTTPStatus.BAD_REQUEST,
         )
 
-    user = User.objects.filter(name=username, password=password).first()
+    user = User.objects.filter(name=username).first()
+
     if not user:
         return JsonResponse(
             {"error": "Invalid username or password"},
             status=HTTPStatus.UNAUTHORIZED,
+        )
+
+    from argon2 import PasswordHasher
+    from argon2.exceptions import HashingError, VerifyMismatchError
+
+    p_hash = PasswordHasher()
+
+    try:
+        p_hash.verify(user.password, password)
+
+        if p_hash.check_needs_rehash(user.password):
+            user.password = p_hash.hash(password)
+            user.save(update_fields=["password"])
+
+    except VerifyMismatchError:
+        return JsonResponse(
+            {"error": "Invalid username or password"},
+            status=HTTPStatus.UNAUTHORIZED,
+        )
+    except HashingError:
+        return JsonResponse(
+            {"error": "Internal error for login user"},
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
         )
 
     return JsonResponse({"id": user.id, "name": user.name})
