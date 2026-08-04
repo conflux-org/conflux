@@ -1,21 +1,23 @@
 from django.urls import path
 
-from api import auth, channels, guilds, users
+from api import auth, channel, guild, message
 
 urlpatterns = [
     path("auth/login/", auth.login, name="login"),
-    path("users/", users.sign_up, name="add-user-account"),
+    path("auth/signup/", auth.sign_up, name="signup"),
     path(
-        "users/<int:user_id>/guilds/", users.get_guilds_by_user_id, name="user-guilds"
+        "user/<int:user_id>/guilds/",
+        guild.get_guilds_by_user_id,
+        name="user-guilds",
     ),
     path(
-        "guilds/<int:guild_id>/channels/",
-        guilds.get_channels_by_guild_id,
+        "guild/<int:guild_id>/channels/",
+        channel.get_channels_by_guild_id,
         name="guild-channels",
     ),
     path(
-        "channels/<int:channel_id>/messages/",
-        channels.get_messages_by_channel_id,
+        "channel/<int:channel_id>/messages/",
+        message.get_messages_by_channel_id,
         name="channel-messages",
     ),
 ]

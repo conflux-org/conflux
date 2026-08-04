@@ -55,3 +55,47 @@ def login(request):
         )
 
     return JsonResponse({"id": user.id, "name": user.name})
+
+
+@require_http_methods(["POST"])
+def sign_up(request):
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
+
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return JsonResponse(
+            {"error": "Missing required field: username or password"},
+            status=HTTPStatus.BAD_REQUEST,
+        )
+
+    if User.objects.filter(name=username).exists():
+        return JsonResponse(
+            {"error": "User with this name already exists"},
+            status=HTTPStatus.CONFLICT,
+        )
+
+    from argon2 import PasswordHasher
+    from argon2.exceptions import HashingError
+
+    p_hash = PasswordHasher()
+
+    try:
+        password = p_hash.hash(password)
+    except HashingError:
+        return JsonResponse(
+            {"error": "Internal error for sign up user"},
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
+        )
+
+    user = User.objects.create(name=username, password=password)
+
+    return JsonResponse(
+        {"id": user.id, "name": user.name},
+        status=HTTPStatus.CREATED,
+    )

@@ -6,7 +6,7 @@ from django.urls import reverse
 from api.models import Channel, Guild, User
 
 
-class GuildAPITestCase(TestCase):
+class ChannelAPITestCase(TestCase):
     def setUp(self):
         self.user1 = User.objects.create(name="Alice", password="pass123")
         self.guild1 = Guild.objects.create(name="Guild Alpha", owner=self.user1)
