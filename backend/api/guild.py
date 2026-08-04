@@ -3,15 +3,18 @@ from http import HTTPStatus
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from api.models import Channel, Guild
+from api.models import Guild, User
 
 
 @require_http_methods(["GET"])
-def get_channels_by_guild_id(request, guild_id):
-    if not Guild.objects.filter(id=guild_id).exists():
-        return JsonResponse({"error": "Guild not found"}, status=HTTPStatus.NOT_FOUND)
+def get_guilds_by_user_id(request, user_id):
+    if not User.objects.filter(id=user_id).exists():
+        return JsonResponse({"error": "User not found"}, status=HTTPStatus.NOT_FOUND)
 
-    channels = Channel.objects.filter(guild_id=guild_id)
+    guilds = Guild.objects.filter(
+        guildmember__user_id=user_id,
+        guildmember__deleted_at__isnull=True,
+    ).distinct()
 
-    data = [{"id": channel.id, "name": channel.name} for channel in channels]
+    data = [{"id": guild.id, "name": guild.name} for guild in guilds]
     return JsonResponse(data, safe=False, status=HTTPStatus.OK)
