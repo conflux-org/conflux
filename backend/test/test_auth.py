@@ -50,3 +50,29 @@ class LoginAPITestCase(TestCase):
     def test_login_method_not_allowed(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+
+
+class SignUpAPITestCase(TestCase):
+    def setUp(self):
+        self.url = reverse("signup")
+        self.existing_user = User.objects.create(name="Alice", password="pass123")
+
+    def test_signup_success(self):
+        payload = {"username": "Charlie", "password": "charliepass"}
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        self.assertEqual(response.json()["name"], "Charlie")
+        self.assertTrue(User.objects.filter(name="Charlie").exists())
+
+    def test_signup_duplicate(self):
+        payload = {"username": "Alice", "password": "charliepass"}
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, HTTPStatus.CONFLICT)
+
+    def test_signup_method_not_allowed(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)

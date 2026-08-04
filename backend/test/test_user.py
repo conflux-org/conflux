@@ -47,22 +47,3 @@ class UserAPITestCase(TestCase):
         url = reverse("user-guilds", kwargs={"user_id": self.user1.id})
         response = self.client.post(url)
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
-
-    def test_add_user_account_success(self):
-        url = reverse("add-user-account")
-        payload = {"username": "Charlie", "password": "charliepass"}
-        response = self.client.post(url, data=payload, content_type="application/json")
-        self.assertEqual(response.status_code, HTTPStatus.CREATED)
-        self.assertEqual(response.json()["name"], "Charlie")
-        self.assertTrue(User.objects.filter(name="Charlie").exists())
-
-    def test_add_user_account_duplicate(self):
-        url = reverse("add-user-account")
-        payload = {"username": "Alice", "password": "charliepass"}
-        response = self.client.post(url, data=payload, content_type="application/json")
-        self.assertEqual(response.status_code, HTTPStatus.CONFLICT)
-
-    def test_add_user_account_method_not_allowed(self):
-        url = reverse("add-user-account")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
