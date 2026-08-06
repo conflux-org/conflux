@@ -4,6 +4,7 @@ from http import HTTPStatus
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
+from api.jwt_utils import generate_jwt_token
 from api.models import User
 
 
@@ -54,7 +55,8 @@ def login(request):
             status=HTTPStatus.INTERNAL_SERVER_ERROR,
         )
 
-    return JsonResponse({"id": user.id, "name": user.name})
+    token = generate_jwt_token(user.id, user.name)
+    return JsonResponse({"id": user.id, "name": user.name, "token": token})
 
 
 @require_http_methods(["POST"])
@@ -95,7 +97,8 @@ def sign_up(request):
 
     user = User.objects.create(name=username, password=password)
 
+    token = generate_jwt_token(user.id, user.name)
     return JsonResponse(
-        {"id": user.id, "name": user.name},
+        {"id": user.id, "name": user.name, "token": token},
         status=HTTPStatus.CREATED,
     )

@@ -3,6 +3,7 @@ from http import HTTPStatus
 from django.test import TestCase
 from django.urls import reverse
 
+from api.jwt_utils import generate_jwt_token
 from api.models import Channel, Guild, Message, User
 
 
@@ -20,9 +21,11 @@ class MessageAPITestCase(TestCase):
             author=self.user2, content="Hi Alice!", channel=self.channel1
         )
 
+        self.token1 = generate_jwt_token(self.user1.id, self.user1.name)
+
     def test_get_channel_messages_success(self):
         url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
-        response = self.client.get(url)
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.OK)
         data = response.json()
         self.assertEqual(len(data), 2)
@@ -39,7 +42,7 @@ class MessageAPITestCase(TestCase):
 
     def test_get_channel_messages_not_found(self):
         url = reverse("channel-messages", kwargs={"channel_id": 999999})
-        response = self.client.get(url)
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.assertEqual(response.json(), {"error": "Channel not found"})
 
@@ -47,7 +50,7 @@ class MessageAPITestCase(TestCase):
         self.message2.delete()  # soft delete
 
         url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
-        response = self.client.get(url)
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.OK)
         data = response.json()
         self.assertEqual(len(data), 1)
@@ -55,5 +58,5 @@ class MessageAPITestCase(TestCase):
 
     def test_get_channel_messages_method_not_allowed(self):
         url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
-        response = self.client.post(url)
+        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
