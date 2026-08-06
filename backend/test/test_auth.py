@@ -47,6 +47,15 @@ class LoginAPITestCase(TestCase):
         )
         self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
 
+    def test_login_invalid_password_hash(self):
+        User.objects.create(name="badhashuser", password="plain_text_not_argon2")
+        payload = {"username": "badhashuser", "password": "somepassword"}
+        response = self.client.post(
+            self.url, data=payload, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(response.json(), {"error": "Invalid username or password"})
+
     def test_login_method_not_allowed(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)

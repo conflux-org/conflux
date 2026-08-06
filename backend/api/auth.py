@@ -32,7 +32,7 @@ def login(request):
         )
 
     from argon2 import PasswordHasher
-    from argon2.exceptions import HashingError, VerifyMismatchError
+    from argon2.exceptions import HashingError, InvalidHashError, VerifyMismatchError
 
     p_hash = PasswordHasher()
 
@@ -43,7 +43,7 @@ def login(request):
             user.password = p_hash.hash(password)
             user.save(update_fields=["password"])
 
-    except VerifyMismatchError:
+    except (VerifyMismatchError, InvalidHashError):
         return JsonResponse(
             {"error": "Invalid username or password"},
             status=HTTPStatus.UNAUTHORIZED,
