@@ -31,12 +31,7 @@ fun AppNavigation() {
             }
 
             is NavKey.Main -> {
-                MainScreen(
-                    onLogoutClick = {
-                        backStack.clear()
-                        backStack.add(NavKey.Auth)
-                    },
-                )
+                MainScreen()
             }
         }
     }

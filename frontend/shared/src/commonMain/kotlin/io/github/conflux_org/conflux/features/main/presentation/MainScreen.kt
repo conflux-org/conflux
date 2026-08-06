@@ -1,33 +1,21 @@
 package io.github.conflux_org.conflux.features.main.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CorporateFare
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Hub
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,221 +23,198 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import io.github.conflux_org.conflux.core.ui.components.ServerIcon
-import io.github.conflux_org.conflux.core.ui.components.ServerIconStatus
+import androidx.compose.ui.unit.sp
+import io.github.conflux_org.conflux.core.ui.components.ChannelStatus
+import io.github.conflux_org.conflux.core.ui.components.MemberCategoryData
+import io.github.conflux_org.conflux.core.ui.components.MemberData
+import io.github.conflux_org.conflux.core.ui.components.MemberSidebar
+import io.github.conflux_org.conflux.core.ui.components.MessageArea
+import io.github.conflux_org.conflux.core.ui.components.MessageData
+import io.github.conflux_org.conflux.core.ui.components.Sidebar
+import io.github.conflux_org.conflux.core.ui.components.TextChannelItem
+import io.github.conflux_org.conflux.core.ui.components.UserStatus
 
+/**
+ * Conflux 主畫面 - 組合所有 Discord 風格組件 (Guild Sidebar, Channel List, Message Feed, Member Sidebar)
+ */
 @Composable
-fun MainScreen(
-    onLogoutClick: () -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(Color(0xFF141416))
-                .safeContentPadding(),
-    ) {
-        // Top Navigation Header
-        TopAppBarHeader(onLogoutClick = onLogoutClick)
+fun MainScreen() {
+    // 假資料狀態 (State)
+    var selectedChannel by remember { mutableStateOf("general") }
 
-        Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            // Left Server Icons Bar (Discord-style)
-            ServerIconsRail()
-
-            // Left Sidebar
-            SidebarMenu()
-
-            // Main Content Area
-            MainContentDashboard()
-        }
+    val channelList = remember {
+        listOf("welcome", "general", "announcements", "random-chat")
     }
-}
 
-@Composable
-private fun ServerIconsRail() {
-    var selectedIndex by remember { mutableStateOf(0) }
-
-    Column(
-        modifier =
-            Modifier
-                .width(72.dp)
-                .fillMaxHeight()
-                .background(Color(0xFF1E1F22))
-                .padding(vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        ServerIcon(
-            status = if (selectedIndex == 0) ServerIconStatus.Selected else ServerIconStatus.Idle,
-            iconVector = Icons.Filled.Home,
-            onClick = { selectedIndex = 0 },
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ServerIcon(
-            status = if (selectedIndex == 1) ServerIconStatus.Selected else ServerIconStatus.Notification,
-            iconVector = Icons.Filled.Hub,
-            onClick = { selectedIndex = 1 },
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ServerIcon(
-            status = if (selectedIndex == 2) ServerIconStatus.Selected else ServerIconStatus.Group,
-            iconVector = Icons.Filled.CorporateFare,
-            onClick = { selectedIndex = 2 },
+    val sampleMessages = remember {
+        mutableStateListOf(
+            MessageData(
+                id = "1",
+                senderName = "Alex",
+                avatarColor = Color(0xFFE91E63),
+                timestamp = "今天 17:20",
+                content = "大家好！歡迎來到 Conflux 聊天室！",
+            ),
+            MessageData(
+                id = "2",
+                senderName = "ConfluxBot",
+                avatarColor = Color(0xFF5865F2),
+                timestamp = "今天 17:22",
+                content = "系統提示：頻道已被成功創建，狀態正常。",
+                isBot = true,
+            ),
+            MessageData(
+                id = "3",
+                senderName = "Taylor",
+                avatarColor = Color(0xFF2ECC71),
+                timestamp = "今天 17:25",
+                content = "這個介面設計完全就是 Discord 的感覺！真的很讚 🔥",
+            ),
         )
     }
-}
 
-@Composable
-private fun TopAppBarHeader(onLogoutClick: () -> Unit) {
+    val sampleCategories = remember {
+        listOf(
+            MemberCategoryData(
+                roleName = "管理員",
+                members = listOf(
+                    MemberData(
+                        id = "m1",
+                        name = "Alex (Owner)",
+                        nameColor = Color(0xFFF1C40F),
+                        avatarColor = Color(0xFFE91E63),
+                        status = UserStatus.Online,
+                        customStatus = "Coding KMP UI",
+                    ),
+                    MemberData(
+                        id = "m2",
+                        name = "ConfluxBot",
+                        avatarColor = Color(0xFF5865F2),
+                        status = UserStatus.Online,
+                        isBot = true,
+                    )
+                )
+            ),
+            MemberCategoryData(
+                roleName = "線上成員",
+                members = listOf(
+                    MemberData(
+                        id = "m3",
+                        name = "Taylor",
+                        avatarColor = Color(0xFF2ECC71),
+                        status = UserStatus.Idle,
+                        customStatus = "AFK - Getting coffee",
+                    ),
+                    MemberData(
+                        id = "m4",
+                        name = "Jordan",
+                        avatarColor = Color(0xFF9B59B6),
+                        status = UserStatus.Dnd,
+                        customStatus = "Do Not Disturb / Busy",
+                    )
+                )
+            ),
+            MemberCategoryData(
+                roleName = "離線成員",
+                members = listOf(
+                    MemberData(
+                        id = "m5",
+                        name = "Morgan",
+                        avatarColor = Color(0xFF95A5A6),
+                        status = UserStatus.Offline,
+                    )
+                )
+            )
+        )
+    }
+
     Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .background(Color(0xFF1F1F23))
-                .padding(horizontal = 20.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF1E1F22)),
     ) {
-        Text(
-            text = "Conflux",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF6C63FF),
-        )
+        // 1. 最左側伺服器 Guild 側邊欄 (寬度 72.dp)
+        Sidebar()
 
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Box(
-            modifier =
-                Modifier
-                    .background(Color(0xFF2D2D35), shape = RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
+        // 2. 頻道列表欄 (寬度 240.dp)
+        Column(
+            modifier = Modifier
+                .width(240.dp)
+                .fillMaxHeight()
+                .background(Color(0xFF2B2D31)),
         ) {
-            Text(text = "Workspace: Default", color = Color.White, style = MaterialTheme.typography.bodySmall)
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Profile & Logout
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(36.dp)
-                        .background(Color(0xFF4A4A91), shape = CircleShape),
-                contentAlignment = Alignment.Center,
+            // 伺服器名稱 Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("U", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Conflux Server",
+                    color = Color(0xFFF2F3F5),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Text(
-                text = "登出",
-                color = Color(0xFFFF5252),
-                modifier = Modifier.clickable { onLogoutClick() },
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SidebarMenu() {
-    Column(
-        modifier =
-            Modifier
-                .width(220.dp)
-                .fillMaxHeight()
-                .background(Color(0xFF1A1A1E))
-                .padding(16.dp),
-    ) {
-        Text("主選單", color = Color(0xFF8A8A8A), style = MaterialTheme.typography.labelMedium)
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        SidebarItem(label = "📊 Dashboard", isSelected = true)
-        SidebarItem(label = "📁 Repositories", isSelected = false)
-        SidebarItem(label = "💬 Channels", isSelected = false)
-        SidebarItem(label = "⚙️ Settings", isSelected = false)
-    }
-}
-
-@Composable
-private fun SidebarItem(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit = {},
-) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-                .background(
-                    color = if (isSelected) Color(0xFF2D2D35) else Color.Transparent,
-                    shape = RoundedCornerShape(8.dp),
-                ).clickable { onClick() }
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        Text(
-            text = label,
-            color = if (isSelected) Color.White else Color(0xFFB0B0B0),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    }
-}
-
-@Composable
-private fun MainContentDashboard() {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-    ) {
-        item {
-            Text(
-                text = "歡迎回來！",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = Color(0xFF1F2023),
             )
 
-            Text(
-                text = "這裏是您的工作區總覽與專案管理中心",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF9A9A9A),
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        item {
-            Text(
-                text = "Repositories",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth().height(120.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF23232A)),
-                shape = RoundedCornerShape(12.dp),
+            // 頻道清單
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
             ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
-                ) {
-                    Text("Conflux Monorepo", color = Color.White, fontWeight = FontWeight.Bold)
-                    Text("Branch: master", color = Color(0xFF8A8A8A), style = MaterialTheme.typography.bodySmall)
-                    Text("Status: Active", color = Color(0xFF4CAF50), style = MaterialTheme.typography.labelSmall)
+                items(channelList) { channelName ->
+                    val status = when {
+                        channelName == selectedChannel -> ChannelStatus.Selected
+                        channelName == "announcements" -> ChannelStatus.Unread
+                        else -> ChannelStatus.Idle
+                    }
+
+                    TextChannelItem(
+                        name = channelName,
+                        status = status,
+                        onClick = { selectedChannel = channelName },
+                    )
                 }
             }
         }
+
+        // 3. 中央訊息區塊 (權重 1f 佔滿剩餘寬度)
+        MessageArea(
+            channelName = selectedChannel,
+            messages = sampleMessages,
+            modifier = Modifier.weight(1f),
+            onSendMessage = { text ->
+                sampleMessages.add(
+                    MessageData(
+                        id = (sampleMessages.size + 1).toString(),
+                        senderName = "You",
+                        avatarColor = Color(0xFF3498DB),
+                        timestamp = "剛剛",
+                        content = text,
+                    )
+                )
+            },
+        )
+
+        // 4. 右側成員側邊欄 (寬度 240.dp)
+        MemberSidebar(
+            categories = sampleCategories,
+        )
     }
+}
+
+@Preview
+@Composable
+fun Preview() {
+    MainScreen()
 }
