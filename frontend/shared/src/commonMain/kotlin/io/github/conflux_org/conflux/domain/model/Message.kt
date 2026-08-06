@@ -1,6 +1,7 @@
 package io.github.conflux_org.conflux.domain.model
 
-data class User(
+data class Message(
     val id: Long,
-    val name: String,
+    val author: User,
+    val content: String,
 )
