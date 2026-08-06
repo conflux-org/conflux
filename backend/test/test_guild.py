@@ -3,6 +3,7 @@ from http import HTTPStatus
 from django.test import TestCase
 from django.urls import reverse
 
+from api.jwt_utils import generate_jwt_token
 from api.models import Guild, GuildMember, User
 
 
@@ -17,9 +18,13 @@ class GuildAPITestCase(TestCase):
         GuildMember.objects.create(guild=self.guild1, user=self.user1)
         GuildMember.objects.create(guild=self.guild2, user=self.user1)
 
+        self.token1 = generate_jwt_token(self.user1.id, self.user1.name)
+
     def test_get_user_guilds_success(self):
         url = reverse("user-guilds", kwargs={"user_id": self.user1.id})
-        response = self.client.get(url)
+        response = self.client.get(
+            url, HTTP_AUTHORIZATION=f"Bearer {self.token1}"
+        )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         data = response.json()
         self.assertEqual(len(data), 2)
@@ -28,7 +33,9 @@ class GuildAPITestCase(TestCase):
 
     def test_get_user_guilds_not_found(self):
         url = reverse("user-guilds", kwargs={"user_id": 999999})
-        response = self.client.get(url)
+        response = self.client.get(
+            url, HTTP_AUTHORIZATION=f"Bearer {self.token1}"
+        )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.assertEqual(response.json(), {"error": "User not found"})
 
@@ -37,7 +44,9 @@ class GuildAPITestCase(TestCase):
         membership.delete()  # soft delete
 
         url = reverse("user-guilds", kwargs={"user_id": self.user1.id})
-        response = self.client.get(url)
+        response = self.client.get(
+            url, HTTP_AUTHORIZATION=f"Bearer {self.token1}"
+        )
         self.assertEqual(response.status_code, HTTPStatus.OK)
         data = response.json()
         self.assertEqual(len(data), 1)
@@ -45,5 +54,7 @@ class GuildAPITestCase(TestCase):
 
     def test_get_user_guilds_method_not_allowed(self):
         url = reverse("user-guilds", kwargs={"user_id": self.user1.id})
-        response = self.client.post(url)
+        response = self.client.post(
+            url, HTTP_AUTHORIZATION=f"Bearer {self.token1}"
+        )
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
