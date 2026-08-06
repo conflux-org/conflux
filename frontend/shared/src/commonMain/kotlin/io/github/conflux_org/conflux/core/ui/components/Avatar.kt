@@ -28,27 +28,29 @@ fun UserStatusBadge(
     badgeSize: Dp = 14.dp,
     borderColor: Color = Color(0xFF2B2D31),
 ) {
-    val badgeColor = when (status) {
-        UserStatus.Online -> Color(0xFF23A55A)
-        UserStatus.Idle -> Color(0xFFF0B232)
-        UserStatus.Dnd -> Color(0xFFF23F43)
-        UserStatus.Offline -> Color(0xFF80848E)
-    }
+    val badgeColor =
+        when (status) {
+            UserStatus.Online -> Color(0xFF23A55A)
+            UserStatus.Idle -> Color(0xFFF0B232)
+            UserStatus.Dnd -> Color(0xFFF23F43)
+            UserStatus.Offline -> Color(0xFF80848E)
+        }
 
     Box(
-        modifier = modifier
-            .size(badgeSize)
-            .background(borderColor, CircleShape)
-            .padding(2.dp)
-            .clip(CircleShape)
-            .background(if (status == UserStatus.Offline) Color.Transparent else badgeColor)
-            .then(
-                if (status == UserStatus.Offline) {
-                    Modifier.border(2.dp, badgeColor, CircleShape)
-                } else {
-                    Modifier
-                }
-            ),
+        modifier =
+            modifier
+                .size(badgeSize)
+                .background(borderColor, CircleShape)
+                .padding(2.dp)
+                .clip(CircleShape)
+                .background(if (status == UserStatus.Offline) Color.Transparent else badgeColor)
+                .then(
+                    if (status == UserStatus.Offline) {
+                        Modifier.border(2.dp, badgeColor, CircleShape)
+                    } else {
+                        Modifier
+                    },
+                ),
     )
 }
 
@@ -81,10 +83,11 @@ fun UserAvatar(
     ) {
         // 頭像圓形主體
         Box(
-            modifier = Modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(backgroundColor),
+            modifier =
+                Modifier
+                    .size(size)
+                    .clip(CircleShape)
+                    .background(backgroundColor),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -111,10 +114,13 @@ fun UserAvatar(
 @Composable
 private fun UserAvatarPreview() {
     androidx.compose.foundation.layout.Row(
-        modifier = Modifier
-            .background(Color(0xFF2B2D31))
-            .padding(16.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+        modifier =
+            Modifier
+                .background(Color(0xFF2B2D31))
+                .padding(16.dp),
+        horizontalArrangement =
+            androidx.compose.foundation.layout.Arrangement
+                .spacedBy(12.dp),
     ) {
         UserAvatar(name = "Alex", size = 40.dp, status = UserStatus.Online)
         UserAvatar(name = "Taylor", size = 32.dp, status = UserStatus.Idle)

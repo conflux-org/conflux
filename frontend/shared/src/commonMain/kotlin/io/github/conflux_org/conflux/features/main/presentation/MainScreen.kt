@@ -44,113 +44,122 @@ fun MainScreen() {
     // 假資料狀態 (State)
     var selectedChannel by remember { mutableStateOf("general") }
 
-    val channelList = remember {
-        listOf("welcome", "general", "announcements", "random-chat")
-    }
+    val channelList =
+        remember {
+            listOf("welcome", "general", "announcements", "random-chat")
+        }
 
-    val sampleMessages = remember {
-        mutableStateListOf(
-            MessageData(
-                id = "1",
-                senderName = "Alex",
-                avatarColor = Color(0xFFE91E63),
-                timestamp = "今天 17:20",
-                content = "大家好！歡迎來到 Conflux 聊天室！",
-            ),
-            MessageData(
-                id = "2",
-                senderName = "ConfluxBot",
-                avatarColor = Color(0xFF5865F2),
-                timestamp = "今天 17:22",
-                content = "系統提示：頻道已被成功創建，狀態正常。",
-                isBot = true,
-            ),
-            MessageData(
-                id = "3",
-                senderName = "Taylor",
-                avatarColor = Color(0xFF2ECC71),
-                timestamp = "今天 17:25",
-                content = "這個介面設計完全就是 Discord 的感覺！真的很讚 🔥",
-            ),
-        )
-    }
-
-    val sampleCategories = remember {
-        listOf(
-            MemberCategoryData(
-                roleName = "管理員",
-                members = listOf(
-                    MemberData(
-                        id = "m1",
-                        name = "Alex (Owner)",
-                        nameColor = Color(0xFFF1C40F),
-                        avatarColor = Color(0xFFE91E63),
-                        status = UserStatus.Online,
-                        customStatus = "Coding KMP UI",
-                    ),
-                    MemberData(
-                        id = "m2",
-                        name = "ConfluxBot",
-                        avatarColor = Color(0xFF5865F2),
-                        status = UserStatus.Online,
-                        isBot = true,
-                    )
-                )
-            ),
-            MemberCategoryData(
-                roleName = "線上成員",
-                members = listOf(
-                    MemberData(
-                        id = "m3",
-                        name = "Taylor",
-                        avatarColor = Color(0xFF2ECC71),
-                        status = UserStatus.Idle,
-                        customStatus = "AFK - Getting coffee",
-                    ),
-                    MemberData(
-                        id = "m4",
-                        name = "Jordan",
-                        avatarColor = Color(0xFF9B59B6),
-                        status = UserStatus.Dnd,
-                        customStatus = "Do Not Disturb / Busy",
-                    )
-                )
-            ),
-            MemberCategoryData(
-                roleName = "離線成員",
-                members = listOf(
-                    MemberData(
-                        id = "m5",
-                        name = "Morgan",
-                        avatarColor = Color(0xFF95A5A6),
-                        status = UserStatus.Offline,
-                    )
-                )
+    val sampleMessages =
+        remember {
+            mutableStateListOf(
+                MessageData(
+                    id = "1",
+                    senderName = "Alex",
+                    avatarColor = Color(0xFFE91E63),
+                    timestamp = "今天 17:20",
+                    content = "大家好！歡迎來到 Conflux 聊天室！",
+                ),
+                MessageData(
+                    id = "2",
+                    senderName = "ConfluxBot",
+                    avatarColor = Color(0xFF5865F2),
+                    timestamp = "今天 17:22",
+                    content = "系統提示：頻道已被成功創建，狀態正常。",
+                    isBot = true,
+                ),
+                MessageData(
+                    id = "3",
+                    senderName = "Taylor",
+                    avatarColor = Color(0xFF2ECC71),
+                    timestamp = "今天 17:25",
+                    content = "這個介面設計完全就是 Discord 的感覺！真的很讚 🔥",
+                ),
             )
-        )
-    }
+        }
+
+    val sampleCategories =
+        remember {
+            listOf(
+                MemberCategoryData(
+                    roleName = "管理員",
+                    members =
+                        listOf(
+                            MemberData(
+                                id = "m1",
+                                name = "Alex (Owner)",
+                                nameColor = Color(0xFFF1C40F),
+                                avatarColor = Color(0xFFE91E63),
+                                status = UserStatus.Online,
+                                customStatus = "Coding KMP UI",
+                            ),
+                            MemberData(
+                                id = "m2",
+                                name = "ConfluxBot",
+                                avatarColor = Color(0xFF5865F2),
+                                status = UserStatus.Online,
+                                isBot = true,
+                            ),
+                        ),
+                ),
+                MemberCategoryData(
+                    roleName = "線上成員",
+                    members =
+                        listOf(
+                            MemberData(
+                                id = "m3",
+                                name = "Taylor",
+                                avatarColor = Color(0xFF2ECC71),
+                                status = UserStatus.Idle,
+                                customStatus = "AFK - Getting coffee",
+                            ),
+                            MemberData(
+                                id = "m4",
+                                name = "Jordan",
+                                avatarColor = Color(0xFF9B59B6),
+                                status = UserStatus.Dnd,
+                                customStatus = "Do Not Disturb / Busy",
+                            ),
+                        ),
+                ),
+                MemberCategoryData(
+                    roleName = "離線成員",
+                    members =
+                        listOf(
+                            MemberData(
+                                id = "m5",
+                                name = "Morgan",
+                                avatarColor = Color(0xFF95A5A6),
+                                status = UserStatus.Offline,
+                            ),
+                        ),
+                ),
+            )
+        }
 
     Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF1E1F22)),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color(0xFF1E1F22)),
     ) {
         // 1. 最左側伺服器 Guild 側邊欄 (寬度 72.dp)
         Sidebar()
 
         // 2. 頻道列表欄 (寬度 240.dp)
         Column(
-            modifier = Modifier
-                .width(240.dp)
-                .fillMaxHeight()
-                .background(Color(0xFF2B2D31)),
+            modifier =
+                Modifier
+                    .width(240.dp)
+                    .fillMaxHeight()
+                    .background(Color(0xFF2B2D31)),
         ) {
             // 伺服器名稱 Header
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .padding(horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -168,16 +177,18 @@ fun MainScreen() {
 
             // 頻道清單
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
             ) {
                 items(channelList) { channelName ->
-                    val status = when {
-                        channelName == selectedChannel -> ChannelStatus.Selected
-                        channelName == "announcements" -> ChannelStatus.Unread
-                        else -> ChannelStatus.Idle
-                    }
+                    val status =
+                        when {
+                            channelName == selectedChannel -> ChannelStatus.Selected
+                            channelName == "announcements" -> ChannelStatus.Unread
+                            else -> ChannelStatus.Idle
+                        }
 
                     TextChannelItem(
                         name = channelName,
@@ -201,7 +212,7 @@ fun MainScreen() {
                         avatarColor = Color(0xFF3498DB),
                         timestamp = "剛剛",
                         content = text,
-                    )
+                    ),
                 )
             },
         )

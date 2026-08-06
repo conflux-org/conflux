@@ -5,5 +5,6 @@ package io.github.conflux_org.conflux.core.navigation
  */
 sealed interface NavKey {
     data object Auth : NavKey
+
     data object Main : NavKey
 }

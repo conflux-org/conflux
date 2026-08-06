@@ -65,6 +65,9 @@ class AuthViewModelTest {
             viewModel.handleIntent(AuthIntent.SignUp)
 
             assertEquals(1L, successUserId)
-            assertTrue(viewModel.uiState.value.signUpError.isEmpty())
+            assertTrue(
+                viewModel.uiState.value.signUpError
+                    .isEmpty(),
+            )
         }
 }

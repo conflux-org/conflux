@@ -33,7 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 enum class ChannelStatus {
-    Idle, Hover, Selected, Unread
+    Idle,
+    Hover,
+    Selected,
+    Unread,
 }
 
 /**
@@ -52,51 +55,55 @@ fun TextChannelItem(
     onClick: () -> Unit = {},
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = when (status) {
-            ChannelStatus.Selected -> Color(0x33949BA4) // Discord 選中背景 (約 20% 灰度)
-            ChannelStatus.Hover -> Color(0x1A949BA4)    // Discord 懸停背景 (約 10% 灰度)
-            else -> Color.Transparent
-        },
+        targetValue =
+            when (status) {
+                ChannelStatus.Selected -> Color(0x33949BA4) // Discord 選中背景 (約 20% 灰度)
+                ChannelStatus.Hover -> Color(0x1A949BA4) // Discord 懸停背景 (約 10% 灰度)
+                else -> Color.Transparent
+            },
         animationSpec = tween(durationMillis = 150),
     )
 
     val contentColor by animateColorAsState(
-        targetValue = when (status) {
-            ChannelStatus.Selected, ChannelStatus.Unread -> Color(0xFFF2F3F5)
-            ChannelStatus.Hover -> Color(0xFFDBDEE1)
-            ChannelStatus.Idle -> Color(0xFF949BA4)
-        },
+        targetValue =
+            when (status) {
+                ChannelStatus.Selected, ChannelStatus.Unread -> Color(0xFFF2F3F5)
+                ChannelStatus.Hover -> Color(0xFFDBDEE1)
+                ChannelStatus.Idle -> Color(0xFF949BA4)
+            },
         animationSpec = tween(durationMillis = 150),
     )
 
     val iconColor by animateColorAsState(
-        targetValue = when (status) {
-            ChannelStatus.Selected, ChannelStatus.Unread -> Color(0xFFF2F3F5)
-            ChannelStatus.Hover -> Color(0xFFDBDEE1)
-            ChannelStatus.Idle -> Color(0xFF80848E)
-        },
+        targetValue =
+            when (status) {
+                ChannelStatus.Selected, ChannelStatus.Unread -> Color(0xFFF2F3F5)
+                ChannelStatus.Hover -> Color(0xFFDBDEE1)
+                ChannelStatus.Idle -> Color(0xFF80848E)
+            },
         animationSpec = tween(durationMillis = 150),
     )
 
-    val fontWeight = if (status == ChannelStatus.Selected || status == ChannelStatus.Unread) {
-        FontWeight.Bold
-    } else {
-        FontWeight.Medium
-    }
+    val fontWeight =
+        if (status == ChannelStatus.Selected || status == ChannelStatus.Unread) {
+            FontWeight.Bold
+        } else {
+            FontWeight.Medium
+        }
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(34.dp)
-            .padding(horizontal = 8.dp, vertical = 1.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(backgroundColor)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(horizontal = 8.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(34.dp)
+                .padding(horizontal = 8.dp, vertical = 1.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(backgroundColor)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                ).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
@@ -125,11 +132,12 @@ fun TextChannelItem(
 @Composable
 private fun TextChannelItemPreview() {
     Column(
-        modifier = Modifier
-            .width(240.dp)
-            .background(Color(0xFF2B2D31))
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        modifier =
+            Modifier
+                .width(240.dp)
+                .background(Color(0xFF2B2D31))
+                .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         TextChannelItem(name = "welcome", status = ChannelStatus.Idle)
         TextChannelItem(name = "general", status = ChannelStatus.Selected)

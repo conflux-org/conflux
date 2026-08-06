@@ -350,9 +350,7 @@ private fun SignUpPage(
  * 忘記密碼預留 UI 頁面 (使用 UI 本地 remember 變數，暫不安裝 ViewModel API)
  */
 @Composable
-private fun ForgotPasswordPage(
-    onIntent: (AuthIntent) -> Unit,
-) {
+private fun ForgotPasswordPage(onIntent: (AuthIntent) -> Unit) {
     var email by remember { mutableStateOf("") }
 
     Column(

@@ -35,7 +35,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 enum class GuildIconStatus {
-    Idle, Notification, Hover, Selected
+    Idle,
+    Notification,
+    Hover,
+    Selected,
 }
 
 @Composable
@@ -50,19 +53,21 @@ fun GuildIcon(
         animationSpec = spring(Spring.StiffnessLow),
     )
     val backgroundColor by animateColorAsState(
-        targetValue = if (status == GuildIconStatus.Selected) {
-            Color(0xFF5865F2)
-        } else {
-            Color(0xFF2C2D31)
-        },
+        targetValue =
+            if (status == GuildIconStatus.Selected) {
+                Color(0xFF5865F2)
+            } else {
+                Color(0xFF2C2D31)
+            },
         animationSpec = tween(200),
     )
 
     Box(
-        modifier = modifier
-            .height(48.dp)
-            .width(72.dp)
-            .clickable { onClick() },
+        modifier =
+            modifier
+                .height(48.dp)
+                .width(72.dp)
+                .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
         Box(modifier = Modifier.align(Alignment.CenterStart)) {
@@ -76,74 +81,80 @@ fun GuildIcon(
     }
 }
 
-private val GuildIndicatorPillShape = object : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ): Outline {
-        if (size.width <= 0f || size.height <= 0f) {
-            return Outline.Rectangle(Rect.Zero)
-        }
-
-        val path = Path().apply {
-            val r = minOf(size.width, size.height / 2f)
-            moveTo(0f, 0f)
-
-            arcTo(
-                rect = Rect(
-                    left = -r,
-                    top = 0f,
-                    right = r,
-                    bottom = 2 * r
-                ),
-                startAngleDegrees = 270f,
-                sweepAngleDegrees = 90f,
-                forceMoveTo = false
-            )
-
-            if (size.height > 2 * r) {
-                lineTo(r, size.height - r)
+private val GuildIndicatorPillShape =
+    object : Shape {
+        override fun createOutline(
+            size: Size,
+            layoutDirection: LayoutDirection,
+            density: Density,
+        ): Outline {
+            if (size.width <= 0f || size.height <= 0f) {
+                return Outline.Rectangle(Rect.Zero)
             }
 
-            arcTo(
-                rect = Rect(
-                    left = -r,
-                    top = size.height - 2 * r,
-                    right = r,
-                    bottom = size.height
-                ),
-                startAngleDegrees = 0f,
-                sweepAngleDegrees = 90f,
-                forceMoveTo = false
-            )
+            val path =
+                Path().apply {
+                    val r = minOf(size.width, size.height / 2f)
+                    moveTo(0f, 0f)
 
-            lineTo(0f, 0f)
-            close()
+                    arcTo(
+                        rect =
+                            Rect(
+                                left = -r,
+                                top = 0f,
+                                right = r,
+                                bottom = 2 * r,
+                            ),
+                        startAngleDegrees = 270f,
+                        sweepAngleDegrees = 90f,
+                        forceMoveTo = false,
+                    )
+
+                    if (size.height > 2 * r) {
+                        lineTo(r, size.height - r)
+                    }
+
+                    arcTo(
+                        rect =
+                            Rect(
+                                left = -r,
+                                top = size.height - 2 * r,
+                                right = r,
+                                bottom = size.height,
+                            ),
+                        startAngleDegrees = 0f,
+                        sweepAngleDegrees = 90f,
+                        forceMoveTo = false,
+                    )
+
+                    lineTo(0f, 0f)
+                    close()
+                }
+            return Outline.Generic(path)
         }
-        return Outline.Generic(path)
     }
-}
 
 @Composable
 fun GuildIndicatorPill(status: GuildIconStatus) {
-    val targetHeight = when (status) {
-        GuildIconStatus.Idle -> 0.dp
-        GuildIconStatus.Notification -> 8.dp
-        GuildIconStatus.Hover -> 20.dp
-        GuildIconStatus.Selected -> 40.dp
-    }
+    val targetHeight =
+        when (status) {
+            GuildIconStatus.Idle -> 0.dp
+            GuildIconStatus.Notification -> 8.dp
+            GuildIconStatus.Hover -> 20.dp
+            GuildIconStatus.Selected -> 40.dp
+        }
     val height by animateDpAsState(
         targetValue = targetHeight,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
     )
     val width = 4.dp
     Box(
-        modifier = Modifier
-            .width(width)
-            .height(height)
-            .clip(GuildIndicatorPillShape)
-            .background(Color.White),
+        modifier =
+            Modifier
+                .width(width)
+                .height(height)
+                .clip(GuildIndicatorPillShape)
+                .background(Color.White),
     )
 }
 
@@ -152,18 +163,21 @@ fun IconContainer(
     shapePercent: Int = 50,
     backgroundColor: Color = Color.Unspecified,
     iconVector: ImageVector = Icons.Rounded.JoinInner,
-    iconTint: Color = Color.White
+    iconTint: Color = Color.White,
 ) {
     Box(
-        modifier = Modifier.size(48.dp)
-            .then(
-                if (backgroundColor != Color.Unspecified && backgroundColor != Color.Transparent) {
-                    Modifier.clip(RoundedCornerShape(shapePercent))
-                        .background(backgroundColor)
-                } else {
-                    Modifier
-                }
-            ),
+        modifier =
+            Modifier
+                .size(48.dp)
+                .then(
+                    if (backgroundColor != Color.Unspecified && backgroundColor != Color.Transparent) {
+                        Modifier
+                            .clip(RoundedCornerShape(shapePercent))
+                            .background(backgroundColor)
+                    } else {
+                        Modifier
+                    },
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

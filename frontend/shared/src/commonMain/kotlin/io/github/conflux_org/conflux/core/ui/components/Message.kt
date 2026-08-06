@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -64,9 +63,10 @@ fun MessageItem(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.Top,
     ) {
         // 使用者大頭貼 (使用通用 UserAvatar 組件)
@@ -95,10 +95,11 @@ fun MessageItem(
                 if (message.isBot) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(Color(0xFF5865F2))
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                        modifier =
+                            Modifier
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(Color(0xFF5865F2))
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
                         Text(
                             text = "BOT",
@@ -143,12 +144,13 @@ fun MessageInputField(
     var text by remember { mutableStateOf("") }
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF383A40))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFF383A40))
+                .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -158,9 +160,10 @@ fun MessageInputField(
                 imageVector = Icons.Rounded.AddCircle,
                 contentDescription = "Attach",
                 tint = Color(0xFFB5BAC1),
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { },
+                modifier =
+                    Modifier
+                        .size(24.dp)
+                        .clickable { },
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -183,10 +186,11 @@ fun MessageInputField(
                 BasicTextField(
                     value = text,
                     onValueChange = { text = it },
-                    textStyle = TextStyle(
-                        color = Color(0xFFF2F3F5),
-                        fontSize = 15.sp,
-                    ),
+                    textStyle =
+                        TextStyle(
+                            color = Color(0xFFF2F3F5),
+                            fontSize = 15.sp,
+                        ),
                     cursorBrush = SolidColor(Color(0xFFF2F3F5)),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -199,9 +203,10 @@ fun MessageInputField(
                 imageVector = Icons.Rounded.EmojiEmotions,
                 contentDescription = "Emoji",
                 tint = Color(0xFFB5BAC1),
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { },
+                modifier =
+                    Modifier
+                        .size(24.dp)
+                        .clickable { },
             )
 
             if (text.isNotBlank()) {
@@ -210,12 +215,13 @@ fun MessageInputField(
                     imageVector = Icons.Rounded.Send,
                     contentDescription = "Send",
                     tint = Color(0xFF5865F2),
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable {
-                            onSendMessage(text)
-                            text = ""
-                        },
+                    modifier =
+                        Modifier
+                            .size(24.dp)
+                            .clickable {
+                                onSendMessage(text)
+                                text = ""
+                            },
                 )
             }
         }
@@ -234,11 +240,12 @@ fun MessageHeaderBar(
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .background(Color(0xFF313338))
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .background(Color(0xFF313338))
+                    .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -281,14 +288,17 @@ fun MessageArea(
     onSendMessage: (String) -> Unit = {},
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFF313338)),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(Color(0xFF313338)),
     ) {
         // 頂部標題列
         MessageHeaderBar(channelName = channelName)
 
-        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val listState =
+            androidx.compose.foundation.lazy
+                .rememberLazyListState()
 
         androidx.compose.runtime.LaunchedEffect(messages.size) {
             if (messages.isNotEmpty()) {
@@ -299,9 +309,10 @@ fun MessageArea(
         // 訊息列表區域 (對齊底端，最新訊息在最下方)
         LazyColumn(
             state = listState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
             verticalArrangement = Arrangement.Bottom,
         ) {
             items(messages, key = { it.id }) { message ->
@@ -320,30 +331,31 @@ fun MessageArea(
 @Preview
 @Composable
 private fun MessageAreaPreview() {
-    val sampleMessages = listOf(
-        MessageData(
-            id = "1",
-            senderName = "Alex",
-            avatarColor = Color(0xFF5865F2),
-            timestamp = "今天 17:20",
-            content = "大家好！歡迎來到 Conflux 聊天室！",
-        ),
-        MessageData(
-            id = "2",
-            senderName = "ConfluxBot",
-            avatarColor = Color(0xFF23A55A),
-            timestamp = "今天 17:22",
-            content = "系統提示：目前通道運行正常。",
-            isBot = true,
-        ),
-        MessageData(
-            id = "3",
-            senderName = "Taylor",
-            avatarColor = Color(0xFFF0B232),
-            timestamp = "今天 17:25",
-            content = "這個 Discord 風格的 UI 看起來真棒 👍",
-        ),
-    )
+    val sampleMessages =
+        listOf(
+            MessageData(
+                id = "1",
+                senderName = "Alex",
+                avatarColor = Color(0xFF5865F2),
+                timestamp = "今天 17:20",
+                content = "大家好！歡迎來到 Conflux 聊天室！",
+            ),
+            MessageData(
+                id = "2",
+                senderName = "ConfluxBot",
+                avatarColor = Color(0xFF23A55A),
+                timestamp = "今天 17:22",
+                content = "系統提示：目前通道運行正常。",
+                isBot = true,
+            ),
+            MessageData(
+                id = "3",
+                senderName = "Taylor",
+                avatarColor = Color(0xFFF0B232),
+                timestamp = "今天 17:25",
+                content = "這個 Discord 風格的 UI 看起來真棒 👍",
+            ),
+        )
 
     MessageArea(
         channelName = "general",
