@@ -19,9 +19,7 @@ class ChannelAPITestCase(TestCase):
 
     def test_get_guild_channels_success(self):
         url = reverse("guild-channels", kwargs={"guild_id": self.guild1.id})
-        response = self.client.get(
-            url, HTTP_AUTHORIZATION=f"Bearer {self.token1}"
-        )
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.OK)
         data = response.json()
         self.assertEqual(len(data), 2)
@@ -30,9 +28,7 @@ class ChannelAPITestCase(TestCase):
 
     def test_get_guild_channels_not_found(self):
         url = reverse("guild-channels", kwargs={"guild_id": 999999})
-        response = self.client.get(
-            url, HTTP_AUTHORIZATION=f"Bearer {self.token1}"
-        )
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.assertEqual(response.json(), {"error": "Guild not found"})
 
@@ -40,9 +36,7 @@ class ChannelAPITestCase(TestCase):
         self.channel2.delete()  # soft delete
 
         url = reverse("guild-channels", kwargs={"guild_id": self.guild1.id})
-        response = self.client.get(
-            url, HTTP_AUTHORIZATION=f"Bearer {self.token1}"
-        )
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.OK)
         data = response.json()
         self.assertEqual(len(data), 1)
@@ -50,7 +44,5 @@ class ChannelAPITestCase(TestCase):
 
     def test_get_guild_channels_method_not_allowed(self):
         url = reverse("guild-channels", kwargs={"guild_id": self.guild1.id})
-        response = self.client.post(
-            url, HTTP_AUTHORIZATION=f"Bearer {self.token1}"
-        )
+        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
