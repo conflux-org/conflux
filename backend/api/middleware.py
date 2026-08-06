@@ -4,6 +4,7 @@ from typing import ClassVar
 from django.http import JsonResponse
 
 from api.jwt_utils import decode_jwt_token
+from api.models import User
 
 
 class JWTAuthenticationMiddleware:
@@ -23,20 +24,39 @@ class JWTAuthenticationMiddleware:
             return self.get_response(request)
 
         auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
+        if not auth_header:
             return JsonResponse(
                 {"error": "Unauthorized"}, status=HTTPStatus.UNAUTHORIZED
             )
 
-        token = auth_header.split(" ", 1)[1]
-        payload = decode_jwt_token(token)
+        parts = auth_header.split(maxsplit=1)
+        if len(parts) != 2 or parts[0] != "Bearer":
+            return JsonResponse(
+                {"error": "Unauthorized"}, status=HTTPStatus.UNAUTHORIZED
+            )
 
+        token = parts[1].strip()
+        if not token:
+            return JsonResponse(
+                {"error": "Unauthorized"}, status=HTTPStatus.UNAUTHORIZED
+            )
+
+        payload = decode_jwt_token(token)
         if not payload:
             return JsonResponse(
                 {"error": "Unauthorized"}, status=HTTPStatus.UNAUTHORIZED
             )
 
-        request.user_id = payload.get("user_id")
+        user_id = payload.get("user_id")
+        if (
+            not user_id
+            or not User.objects.filter(id=user_id, deleted_at__isnull=True).exists()
+        ):
+            return JsonResponse(
+                {"error": "Unauthorized"}, status=HTTPStatus.UNAUTHORIZED
+            )
+
+        request.user_id = user_id
         request.user_name = payload.get("user_name")
 
         return self.get_response(request)

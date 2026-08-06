@@ -123,7 +123,8 @@ class JWTAuthenticationMiddlewareTestCase(TestCase):
             "iat": past - timedelta(hours=24),
             "exp": past,
         }
-        expired_token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+        algorithm = getattr(settings, "JWT_ALGORITHM", "HS256")
+        expired_token = jwt.encode(payload, settings.SECRET_KEY, algorithm=algorithm)
         response = self.client.get(
             self.protected_url, HTTP_AUTHORIZATION=f"Bearer {expired_token}"
         )
@@ -136,3 +137,19 @@ class JWTAuthenticationMiddlewareTestCase(TestCase):
             self.protected_url, HTTP_AUTHORIZATION=f"Bearer {token}"
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_protected_route_token_with_extra_spaces_in_header(self):
+        token = generate_jwt_token(self.user.id, self.user.name)
+        response = self.client.get(
+            self.protected_url, HTTP_AUTHORIZATION=f"Bearer   {token}  "
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_protected_route_soft_deleted_user(self):
+        token = generate_jwt_token(self.user.id, self.user.name)
+        self.user.delete()  # soft delete user
+        response = self.client.get(
+            self.protected_url, HTTP_AUTHORIZATION=f"Bearer {token}"
+        )
+        self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(response.json(), {"error": "Unauthorized"})
