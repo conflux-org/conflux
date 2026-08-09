@@ -114,3 +114,6 @@ captures/
 .env.local
 .env.*.local
 backend/conflux_backend.egg-info/
+
+# AI Agents & Antigravity
+.agents/
