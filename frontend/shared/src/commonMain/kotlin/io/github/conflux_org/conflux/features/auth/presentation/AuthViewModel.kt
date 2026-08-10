@@ -19,18 +19,40 @@ class AuthViewModel(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
+    var onLoginSuccess: ((userId: Long) -> Unit)? = null
+    var onSignUpSuccess: ((userId: Long) -> Unit)? = null
+
     fun handleIntent(intent: AuthIntent) {
         when (intent) {
-            is AuthIntent.UsernameChanged -> {
-                _uiState.update { it.copy(username = intent.username, errorMessage = "") }
+            is AuthIntent.SwitchPage -> {
+                _uiState.update { it.copy(currentPage = intent.page, loginError = "", signUpError = "") }
             }
-            is AuthIntent.PasswordChanged -> {
-                _uiState.update { it.copy(password = intent.password, errorMessage = "") }
+            // Login
+            is AuthIntent.LoginUsernameChanged -> {
+                _uiState.update { it.copy(username = intent.username, loginError = "") }
+            }
+            is AuthIntent.LoginPasswordChanged -> {
+                _uiState.update { it.copy(password = intent.password, loginError = "") }
+            }
+            is AuthIntent.LoginToggleShowPassword -> {
+                _uiState.update { it.copy(showLoginPassword = intent.show) }
             }
             is AuthIntent.Login -> {
                 login(_uiState.value.username, _uiState.value.password)
             }
-            AuthIntent.NavigateToRegister -> navigateToRegister()
+            // SignUp
+            is AuthIntent.SignUpUsernameChanged -> {
+                _uiState.update { it.copy(signUpUsername = intent.username, signUpError = "") }
+            }
+            is AuthIntent.SignUpPasswordChanged -> {
+                _uiState.update { it.copy(signUpPassword = intent.password, signUpError = "") }
+            }
+            is AuthIntent.ToggleSignUpShowPassword -> {
+                _uiState.update { it.copy(showSignUpPassword = intent.show) }
+            }
+            is AuthIntent.SignUp -> {
+                signUp(_uiState.value.signUpUsername, _uiState.value.signUpPassword)
+            }
         }
     }
 
@@ -45,10 +67,10 @@ class AuthViewModel(
                 authRepository
                     .login(username, password)
                     .onSuccess { user ->
-                        _uiState.update { it.copy(errorMessage = "") }
+                        _uiState.update { it.copy(loginError = "") }
                         onLoginSuccess?.invoke(user.id)
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message ?: "登入失敗") }
+                        _uiState.update { it.copy(loginError = error.message ?: "登入失敗") }
                     }
             } finally {
                 _uiState.update { it.copy(isLoginLoading = false) }
@@ -56,10 +78,21 @@ class AuthViewModel(
         }
     }
 
-    private fun navigateToRegister() {
-        onNavigateToRegister?.invoke()
-    }
+    private fun signUp(
+        username: String,
+        password: String,
+    ) {
+        if (username.isBlank()) {
+            _uiState.update { it.copy(signUpError = "請輸入用戶名稱") }
+            return
+        }
+        if (password.length < 6) {
+            _uiState.update { it.copy(signUpError = "密碼至少需要 6 個字元") }
+            return
+        }
 
-    var onLoginSuccess: ((userId: Long) -> Unit)? = null
-    var onNavigateToRegister: (() -> Unit)? = null
+        // TODO: Implement signup repository call in future steps
+        _uiState.update { it.copy(signUpError = "") }
+        onSignUpSuccess?.invoke(1L)
+    }
 }
