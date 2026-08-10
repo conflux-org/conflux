@@ -56,7 +56,126 @@ class MessageAPITestCase(TestCase):
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["id"], self.message1.id)
 
-    def test_get_channel_messages_method_not_allowed(self):
+    def test_send_message_success(self):
         url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
-        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        payload = {"content": "Hello, world!"}
+        response = self.client.post(
+            url,
+            data=payload,
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        data = response.json()
+        self.assertIn("id", data)
+        self.assertEqual(data["channel_id"], self.channel1.id)
+        self.assertEqual(data["author"], {"id": self.user1.id, "name": self.user1.name})
+        self.assertEqual(data["content"], "Hello, world!")
+        self.assertIn("created_at", data)
+
+        # Verify database record
+        msg = Message.objects.get(id=data["id"])
+        self.assertEqual(msg.content, "Hello, world!")
+        self.assertEqual(msg.author, self.user1)
+        self.assertEqual(msg.channel, self.channel1)
+
+        # Verify GET endpoint includes new message
+        get_resp = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.assertEqual(get_resp.status_code, HTTPStatus.OK)
+        self.assertEqual(len(get_resp.json()), 3)
+
+    def test_send_message_unauthorized(self):
+        url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
+        payload = {"content": "Hello!"}
+
+        # No token
+        response = self.client.post(url, data=payload, content_type="application/json")
+        self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(response.json(), {"error": "Unauthorized"})
+
+        # Invalid token
+        response = self.client.post(
+            url,
+            data=payload,
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer invalid_token",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(response.json(), {"error": "Unauthorized"})
+
+    def test_send_message_channel_not_found(self):
+        url = reverse("channel-messages", kwargs={"channel_id": 999999})
+        payload = {"content": "Test message"}
+        response = self.client.post(
+            url,
+            data=payload,
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(response.json(), {"error": "Channel not found"})
+
+    def test_send_message_channel_soft_deleted(self):
+        self.channel1.delete()  # soft delete
+        url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
+        payload = {"content": "Test message"}
+        response = self.client.post(
+            url,
+            data=payload,
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(response.json(), {"error": "Channel not found"})
+
+    def test_send_message_empty_content(self):
+        url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
+
+        # Missing content field
+        response = self.client.post(
+            url,
+            data={},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Content cannot be empty"})
+
+        # Empty string content
+        response = self.client.post(
+            url,
+            data={"content": ""},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Content cannot be empty"})
+
+        # Whitespace-only content
+        response = self.client.post(
+            url,
+            data={"content": "   \n  "},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Content cannot be empty"})
+
+    def test_send_message_invalid_json(self):
+        url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
+        response = self.client.post(
+            url,
+            data="invalid json {",
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Invalid JSON"})
+
+    def test_channel_messages_method_not_allowed(self):
+        url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
+        response = self.client.put(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+
+        response = self.client.delete(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)

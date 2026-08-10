@@ -17,7 +17,7 @@ urlpatterns = [
     ),
     path(
         "channel/<int:channel_id>/messages/",
-        message.get_messages_by_channel_id,
+        message.channel_messages,
         name="channel-messages",
     ),
 ]
