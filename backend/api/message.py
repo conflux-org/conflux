@@ -15,6 +15,7 @@ def channel_messages(request, channel_id):
         return send_message(request, channel_id)
 
 
+@require_http_methods(["GET"])
 def get_messages_by_channel_id(request, channel_id):
     if not Channel.objects.filter(id=channel_id).exists():
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
@@ -39,6 +40,7 @@ def get_messages_by_channel_id(request, channel_id):
     return JsonResponse(data, safe=False, status=HTTPStatus.OK)
 
 
+@require_http_methods(["POST"])
 def send_message(request, channel_id):
     try:
         data = json.loads(request.body)
