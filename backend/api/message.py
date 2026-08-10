@@ -4,7 +4,7 @@ from http import HTTPStatus
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from api.models import Channel, Message, User
+from api.models import Channel, Message
 
 
 @require_http_methods(["GET", "POST"])
@@ -56,10 +56,8 @@ def send_message(request, channel_id):
     if not channel:
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
 
-    user = User.objects.get(id=request.user_id)
-
     message = Message.objects.create(
-        author=user,
+        author_id=request.user_id,
         channel=channel,
         content=content,
     )
@@ -69,8 +67,8 @@ def send_message(request, channel_id):
             "id": message.id,
             "channel_id": message.channel_id,
             "author": {
-                "id": user.id,
-                "name": user.name,
+                "id": request.user_id,
+                "name": request.user_name,
             },
             "content": message.content,
             "created_at": message.created_at.isoformat(),
