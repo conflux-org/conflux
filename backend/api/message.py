@@ -8,14 +8,9 @@ from api.models import Channel, Message, User
 
 
 @require_http_methods(["GET", "POST"])
-def channel_messages(request, channel_id):
-    if request.method == "GET":
-        return get_messages_by_channel_id(request, channel_id)
-    elif request.method == "POST":
-        return send_message(request, channel_id)
-
-
 def get_messages_by_channel_id(request, channel_id):
+    if request.method == "POST":
+        return send_message(request, channel_id)
     if not Channel.objects.filter(id=channel_id).exists():
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
 
