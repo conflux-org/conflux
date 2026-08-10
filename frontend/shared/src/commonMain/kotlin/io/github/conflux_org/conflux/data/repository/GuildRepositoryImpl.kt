@@ -19,7 +19,7 @@ class GuildRepositoryImpl(
     override suspend fun getGuildsByUserId(userId: Long): Result<List<Guild>> =
         try {
             val response =
-                httpClient.get("$baseUrl/api/user/$userId/guilds/") {
+                httpClient.get("$baseUrl/api/users/$userId/guilds/") {
                     contentType(ContentType.Application.Json)
                 }
 
