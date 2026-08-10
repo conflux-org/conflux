@@ -11,8 +11,7 @@ from api.models import Channel, Message, User
 def channel_messages(request, channel_id):
     if request.method == "GET":
         return get_messages_by_channel_id(request, channel_id)
-    elif request.method == "POST":
-        return send_message(request, channel_id)
+    return send_message(request, channel_id)
 
 
 @require_http_methods(["GET"])
