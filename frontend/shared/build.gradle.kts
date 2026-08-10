@@ -85,6 +85,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutinesTest)
+            implementation(libs.ktor.client.mock)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)
