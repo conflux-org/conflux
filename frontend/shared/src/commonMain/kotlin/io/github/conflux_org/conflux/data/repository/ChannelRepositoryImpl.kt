@@ -19,7 +19,7 @@ class ChannelRepositoryImpl(
     override suspend fun getChannelsByGuildId(guildId: Long): Result<List<Channel>> =
         try {
             val response =
-                httpClient.get("$baseUrl/api/guilds/$guildId/channels/") {
+                httpClient.get("$baseUrl/api/guild/$guildId/channels/") {
                     contentType(ContentType.Application.Json)
                 }
 

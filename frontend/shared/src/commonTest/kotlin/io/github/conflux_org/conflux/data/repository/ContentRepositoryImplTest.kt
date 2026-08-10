@@ -33,7 +33,7 @@ class ContentRepositoryImplTest {
             val result = repository.getChannelsByGuildId(7)
 
             assertEquals("GET", request?.method?.value)
-            assertEquals("/api/guilds/7/channels/", request?.url?.encodedPath)
+            assertEquals("/api/guild/7/channels/", request?.url?.encodedPath)
             assertEquals("general", result.getOrThrow().single().name)
         }
 
@@ -53,7 +53,7 @@ class ContentRepositoryImplTest {
             val result = repository.getGuildsByUserId(9)
 
             assertEquals("GET", request?.method?.value)
-            assertEquals("/api/users/9/guilds/", request?.url?.encodedPath)
+            assertEquals("/api/user/9/guilds/", request?.url?.encodedPath)
             assertEquals("Conflux", result.getOrThrow().single().name)
         }
 
@@ -75,7 +75,7 @@ class ContentRepositoryImplTest {
             val result = repository.getMessagesByChannelId(11)
 
             assertEquals("GET", request?.method?.value)
-            assertEquals("/api/channels/11/messages/", request?.url?.encodedPath)
+            assertEquals("/api/channel/11/messages/", request?.url?.encodedPath)
             assertEquals(
                 "Ada",
                 result

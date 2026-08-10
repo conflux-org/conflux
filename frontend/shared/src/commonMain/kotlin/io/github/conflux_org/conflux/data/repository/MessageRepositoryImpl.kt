@@ -19,7 +19,7 @@ class MessageRepositoryImpl(
     override suspend fun getMessagesByChannelId(channelId: Long): Result<List<Message>> =
         try {
             val response =
-                httpClient.get("$baseUrl/api/channels/$channelId/messages/") {
+                httpClient.get("$baseUrl/api/channel/$channelId/messages/") {
                     contentType(ContentType.Application.Json)
                 }
 
