@@ -7,7 +7,7 @@ import io.github.conflux_org.conflux.domain.model.Channel
 import io.github.conflux_org.conflux.domain.repository.ChannelRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.request.post
+import io.ktor.client.request.get
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -16,10 +16,10 @@ class ChannelRepositoryImpl(
     private val httpClient: HttpClient = HttpClientFactory.create(),
     private val baseUrl: String = "http://127.0.0.1:8000",
 ) : ChannelRepository {
-    override suspend fun getChannelByGuildId(guildId: Long): Result<List<Channel>> =
+    override suspend fun getChannelsByGuildId(guildId: Long): Result<List<Channel>> =
         try {
             val response =
-                httpClient.post("$baseUrl/api/guild/$guildId/channels/") {
+                httpClient.get("$baseUrl/api/guild/$guildId/channels/") {
                     contentType(ContentType.Application.Json)
                 }
 
@@ -28,7 +28,7 @@ class ChannelRepositoryImpl(
                 Result.success(body.map { it.toDomain() })
             } else {
                 val body = response.body<ErrorResponse>()
-                Result.failure(Exception(body.error ?: "登入失敗 (${response.status.value})"))
+                Result.failure(Exception(body.error ?: "取得頻道失敗 (${response.status.value})"))
             }
         } catch (e: Exception) {
             Result.failure(e)
