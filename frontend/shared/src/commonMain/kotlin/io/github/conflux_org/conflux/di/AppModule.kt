@@ -1,5 +1,7 @@
 package io.github.conflux_org.conflux.di
 
+import io.github.conflux_org.conflux.core.auth.AuthTokenProvider
+import io.github.conflux_org.conflux.core.auth.InMemoryAuthTokenProvider
 import io.github.conflux_org.conflux.core.network.HttpClientFactory
 import io.github.conflux_org.conflux.data.repository.AuthRepositoryImpl
 import io.github.conflux_org.conflux.data.repository.ChannelRepositoryImpl
@@ -19,8 +21,9 @@ import org.koin.dsl.module
 val appModule =
     module {
         single<CoroutineDispatcher> { Dispatchers.Main }
-        single<HttpClient> { HttpClientFactory.create() }
-        single<AuthRepository> { AuthRepositoryImpl(get()) }
+        single<AuthTokenProvider> { InMemoryAuthTokenProvider() }
+        single<HttpClient> { HttpClientFactory.create(get()) }
+        single<AuthRepository> { AuthRepositoryImpl(get(), authTokenProvider = get()) }
         single<ChannelRepository> { ChannelRepositoryImpl(get()) }
         single<GuildRepository> { GuildRepositoryImpl(get()) }
         single<MessageRepository> { MessageRepositoryImpl(get()) }
