@@ -70,4 +70,45 @@ class AuthViewModelTest {
                     .isEmpty(),
             )
         }
+
+    @Test
+    fun login_withSuccessfulCredentials_triggersLoginSuccess() =
+        runTest {
+            val fakeRepo = FakeAuthRepository(shouldSucceed = true)
+            val viewModel = AuthViewModel(mainDispatcher = testDispatcher, authRepository = fakeRepo)
+
+            var successUserId: Long? = null
+            viewModel.onLoginSuccess = { userId ->
+                successUserId = userId
+            }
+
+            viewModel.handleIntent(AuthIntent.LoginUsernameChanged("valid_user"))
+            viewModel.handleIntent(AuthIntent.LoginPasswordChanged("password123"))
+            viewModel.handleIntent(AuthIntent.Login)
+
+            assertEquals(1L, successUserId)
+            assertTrue(
+                viewModel.uiState.value.loginError
+                    .isEmpty(),
+            )
+        }
+
+    @Test
+    fun login_withFailedCredentials_setsLoginError() =
+        runTest {
+            val fakeRepo = FakeAuthRepository(shouldSucceed = false, errorMessage = "帳號或密碼錯誤")
+            val viewModel = AuthViewModel(mainDispatcher = testDispatcher, authRepository = fakeRepo)
+
+            var successUserId: Long? = null
+            viewModel.onLoginSuccess = { userId ->
+                successUserId = userId
+            }
+
+            viewModel.handleIntent(AuthIntent.LoginUsernameChanged("invalid_user"))
+            viewModel.handleIntent(AuthIntent.LoginPasswordChanged("wrong_password"))
+            viewModel.handleIntent(AuthIntent.Login)
+
+            assertEquals(null, successUserId)
+            assertEquals("帳號或密碼錯誤", viewModel.uiState.value.loginError)
+        }
 }
