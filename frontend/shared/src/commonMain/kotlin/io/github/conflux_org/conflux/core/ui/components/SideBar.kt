@@ -20,12 +20,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.github.conflux_org.conflux.domain.model.Guild
 
 @Composable
-fun Sidebar() {
+fun Sidebar(
+    guilds: List<Guild> = emptyList(),
+    selectedGuildId: Long? = null,
+    modifier: Modifier = Modifier,
+    onGuildClick: (Guild) -> Unit = {},
+) {
     LazyColumn(
         modifier =
-            Modifier
+            modifier
                 .fillMaxHeight()
                 .width(72.dp)
                 .background(Color(0xFF1C1C1F)),
@@ -55,17 +61,17 @@ fun Sidebar() {
         item {
             IconContainer(iconVector = Icons.Rounded.Dashboard, iconTint = Color(0xFFB5BFE7))
         }
-        items(
-            listOf(
-                GuildIconStatus.Selected,
-                GuildIconStatus.Idle,
-                GuildIconStatus.Hover,
-                GuildIconStatus.Notification,
-                GuildIconStatus.Notification,
-                GuildIconStatus.Notification,
-            ),
-        ) { status ->
-            GuildIcon(status)
+        items(guilds, key = { it.id }) { guild ->
+            val status =
+                if (guild.id == selectedGuildId) {
+                    GuildIconStatus.Selected
+                } else {
+                    GuildIconStatus.Idle
+                }
+            GuildIcon(
+                status = status,
+                onClick = { onGuildClick(guild) },
+            )
         }
     }
 }
@@ -73,5 +79,12 @@ fun Sidebar() {
 @Preview(showBackground = true, backgroundColor = 0xFF1C1C1F)
 @Composable
 fun SidebarPreview() {
-    Sidebar()
+    Sidebar(
+        guilds =
+            listOf(
+                Guild(1L, "Conflux"),
+                Guild(2L, "Gaming"),
+            ),
+        selectedGuildId = 1L,
+    )
 }

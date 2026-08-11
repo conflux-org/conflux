@@ -15,10 +15,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.conflux_org.conflux.core.ui.components.ChannelStatus
 import io.github.conflux_org.conflux.core.ui.components.MemberCategoryData
 import io.github.conflux_org.conflux.core.ui.components.MemberData
@@ -35,47 +33,14 @@ import io.github.conflux_org.conflux.core.ui.components.MessageData
 import io.github.conflux_org.conflux.core.ui.components.Sidebar
 import io.github.conflux_org.conflux.core.ui.components.TextChannelItem
 import io.github.conflux_org.conflux.core.ui.components.UserStatus
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Conflux 主畫面 - 組合所有 Discord 風格組件 (Guild Sidebar, Channel List, Message Feed, Member Sidebar)
  */
 @Composable
-fun MainScreen() {
-    // 假資料狀態 (State)
-    var selectedChannel by remember { mutableStateOf("general") }
-
-    val channelList =
-        remember {
-            listOf("welcome", "general", "announcements", "random-chat")
-        }
-
-    val sampleMessages =
-        remember {
-            mutableStateListOf(
-                MessageData(
-                    id = "1",
-                    senderName = "Alex",
-                    avatarColor = Color(0xFFE91E63),
-                    timestamp = "今天 17:20",
-                    content = "大家好！歡迎來到 Conflux 聊天室！",
-                ),
-                MessageData(
-                    id = "2",
-                    senderName = "ConfluxBot",
-                    avatarColor = Color(0xFF5865F2),
-                    timestamp = "今天 17:22",
-                    content = "系統提示：頻道已被成功創建，狀態正常。",
-                    isBot = true,
-                ),
-                MessageData(
-                    id = "3",
-                    senderName = "Taylor",
-                    avatarColor = Color(0xFF2ECC71),
-                    timestamp = "今天 17:25",
-                    content = "這個介面設計完全就是 Discord 的感覺！真的很讚 🔥",
-                ),
-            )
-        }
+fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val sampleCategories =
         remember {
@@ -143,7 +108,13 @@ fun MainScreen() {
                 .background(Color(0xFF1E1F22)),
     ) {
         // 1. 最左側伺服器 Guild 側邊欄 (寬度 72.dp)
-        Sidebar()
+        Sidebar(
+            guilds = uiState.guilds,
+            selectedGuildId = uiState.selectedGuild?.id,
+            onGuildClick = { guild ->
+                viewModel.handleIntent(MainIntent.SelectGuild(guild))
+            },
+        )
 
         // 2. 頻道列表欄 (寬度 240.dp)
         Column(
@@ -163,7 +134,7 @@ fun MainScreen() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Conflux Server",
+                    text = uiState.selectedGuild?.name.orEmpty(),
                     color = Color(0xFFF2F3F5),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
@@ -182,38 +153,41 @@ fun MainScreen() {
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
             ) {
-                items(channelList) { channelName ->
+                items(uiState.channels, key = { it.id }) { channel ->
                     val status =
-                        when {
-                            channelName == selectedChannel -> ChannelStatus.Selected
-                            channelName == "announcements" -> ChannelStatus.Unread
-                            else -> ChannelStatus.Idle
+                        if (channel.id == uiState.selectedChannel?.id) {
+                            ChannelStatus.Selected
+                        } else {
+                            ChannelStatus.Idle
                         }
 
                     TextChannelItem(
-                        name = channelName,
+                        name = channel.name,
                         status = status,
-                        onClick = { selectedChannel = channelName },
+                        onClick = { viewModel.handleIntent(MainIntent.SelectChannel(channel)) },
                     )
                 }
             }
         }
 
         // 3. 中央訊息區塊 (權重 1f 佔滿剩餘寬度)
+        val displayMessages =
+            uiState.messages.map { msg ->
+                MessageData(
+                    id = msg.id.toString(),
+                    senderName = msg.author.name,
+                    avatarColor = Color(0xFF5865F2),
+                    timestamp = "今天",
+                    content = msg.content,
+                )
+            }
+
         MessageArea(
-            channelName = selectedChannel,
-            messages = sampleMessages,
+            channelName = uiState.selectedChannel?.name.orEmpty(),
+            messages = displayMessages,
             modifier = Modifier.weight(1f),
             onSendMessage = { text ->
-                sampleMessages.add(
-                    MessageData(
-                        id = (sampleMessages.size + 1).toString(),
-                        senderName = "You",
-                        avatarColor = Color(0xFF3498DB),
-                        timestamp = "剛剛",
-                        content = text,
-                    ),
-                )
+                viewModel.handleIntent(MainIntent.SendMessage(text))
             },
         )
 

@@ -10,6 +10,7 @@ import io.github.conflux_org.conflux.domain.repository.ChannelRepository
 import io.github.conflux_org.conflux.domain.repository.GuildRepository
 import io.github.conflux_org.conflux.domain.repository.MessageRepository
 import io.github.conflux_org.conflux.features.auth.presentation.AuthViewModel
+import io.github.conflux_org.conflux.features.main.presentation.MainViewModel
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -25,4 +26,5 @@ val appModule =
         single<GuildRepository> { GuildRepositoryImpl(get()) }
         single<MessageRepository> { MessageRepositoryImpl(get()) }
         viewModel { AuthViewModel(get(), get()) }
+        viewModel { MainViewModel(get(), get(), get(), get()) }
     }

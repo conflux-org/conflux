@@ -6,5 +6,7 @@ package io.github.conflux_org.conflux.core.navigation
 sealed interface NavKey {
     data object Auth : NavKey
 
-    data object Main : NavKey
+    data class Main(
+        val userId: Long = 1L,
+    ) : NavKey
 }

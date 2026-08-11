@@ -174,8 +174,14 @@ fun MessageInputField(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 if (text.isEmpty()) {
+                    val placeholder =
+                        if (channelName.isNotBlank()) {
+                            "發送訊息至 #$channelName"
+                        } else {
+                            "發送訊息"
+                        }
                     Text(
-                        text = "發送訊息至 #$channelName",
+                        text = placeholder,
                         color = Color(0xFF80848E),
                         fontSize = 15.sp,
                         maxLines = 1,
@@ -248,21 +254,23 @@ fun MessageHeaderBar(
                     .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.Rounded.Tag,
-                contentDescription = "Channel Icon",
-                tint = Color(0xFF80848E),
-                modifier = Modifier.size(24.dp),
-            )
+            if (channelName.isNotBlank()) {
+                Icon(
+                    imageVector = Icons.Rounded.Tag,
+                    contentDescription = "Channel Icon",
+                    tint = Color(0xFF80848E),
+                    modifier = Modifier.size(24.dp),
+                )
 
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-            Text(
-                text = channelName,
-                color = Color(0xFFF2F3F5),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
+                Text(
+                    text = channelName,
+                    color = Color(0xFFF2F3F5),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
 
         HorizontalDivider(
@@ -282,7 +290,7 @@ fun MessageHeaderBar(
  */
 @Composable
 fun MessageArea(
-    channelName: String = "general",
+    channelName: String = "",
     messages: List<MessageData> = emptyList(),
     modifier: Modifier = Modifier,
     onSendMessage: (String) -> Unit = {},
