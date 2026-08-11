@@ -18,9 +18,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.EmojiEmotions
-import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -218,7 +218,7 @@ fun MessageInputField(
             if (text.isNotBlank()) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
-                    imageVector = Icons.Rounded.Send,
+                    imageVector = Icons.AutoMirrored.Rounded.Send,
                     contentDescription = "Send",
                     tint = Color(0xFF5865F2),
                     modifier =

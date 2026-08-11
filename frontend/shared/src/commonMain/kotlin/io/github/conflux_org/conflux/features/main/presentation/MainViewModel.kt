@@ -1,6 +1,7 @@
 package io.github.conflux_org.conflux.features.main.presentation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import io.github.conflux_org.conflux.domain.model.Channel
 import io.github.conflux_org.conflux.domain.model.Guild
 import io.github.conflux_org.conflux.domain.model.Message
@@ -9,7 +10,6 @@ import io.github.conflux_org.conflux.domain.repository.ChannelRepository
 import io.github.conflux_org.conflux.domain.repository.GuildRepository
 import io.github.conflux_org.conflux.domain.repository.MessageRepository
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +43,7 @@ class MainViewModel(
                 errorMessage = null,
             )
         }
-        CoroutineScope(mainDispatcher).launch {
+        viewModelScope.launch(mainDispatcher) {
             guildRepository
                 .getGuildsByUserId(userId)
                 .onSuccess { guilds ->
@@ -73,7 +73,7 @@ class MainViewModel(
                 messages = emptyList(),
             )
         }
-        CoroutineScope(mainDispatcher).launch {
+        viewModelScope.launch(mainDispatcher) {
             channelRepository
                 .getChannelsByGuildId(guild.id)
                 .onSuccess { channels ->
@@ -101,7 +101,7 @@ class MainViewModel(
                 messages = emptyList(),
             )
         }
-        CoroutineScope(mainDispatcher).launch {
+        viewModelScope.launch(mainDispatcher) {
             messageRepository
                 .getMessagesByChannelId(channel.id)
                 .onSuccess { messages ->
