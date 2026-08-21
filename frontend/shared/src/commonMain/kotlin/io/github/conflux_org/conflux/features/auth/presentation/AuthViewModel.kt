@@ -91,8 +91,20 @@ class AuthViewModel(
             return
         }
 
-        // TODO: Implement signup repository call in future steps
-        _uiState.update { it.copy(signUpError = "") }
-        onSignUpSuccess?.invoke(1L)
+        _uiState.update { it.copy(isSignUpLoading = true) }
+        viewModelScope.launch(mainDispatcher) {
+            try {
+                authRepository
+                    .signUp(username, password)
+                    .onSuccess { user ->
+                        _uiState.update { it.copy(signUpError = "") }
+                        onSignUpSuccess?.invoke(user.id)
+                    }.onFailure { error ->
+                        _uiState.update { it.copy(signUpError = error.message ?: "註冊失敗") }
+                    }
+            } finally {
+                _uiState.update { it.copy(isSignUpLoading = false) }
+            }
+        }
     }
 }

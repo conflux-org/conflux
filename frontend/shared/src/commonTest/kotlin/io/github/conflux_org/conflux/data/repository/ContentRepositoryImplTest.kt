@@ -1,5 +1,7 @@
 package io.github.conflux_org.conflux.data.repository
 
+import io.github.conflux_org.conflux.core.auth.InMemoryAuthTokenProvider
+import io.github.conflux_org.conflux.core.network.HttpClientFactory
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -101,6 +103,65 @@ class ContentRepositoryImplTest {
 
             assertTrue(result.isFailure)
             assertEquals("取得頻道失敗 (500)", result.exceptionOrNull()?.message)
+        }
+
+    @Test
+    fun channelRepositoryIncludesAuthorizationHeaderWhenTokenPresent() =
+        runTest {
+            val tokenProvider = InMemoryAuthTokenProvider().apply { setToken("content-jwt-token") }
+            var capturedRequest: HttpRequestData? = null
+            val mockEngine =
+                MockEngine { request ->
+                    capturedRequest = request
+                    respondJson("[{\"id\":1,\"name\":\"general\"}]")
+                }
+            val httpClient = HttpClientFactory.create(authTokenProvider = tokenProvider, engine = mockEngine)
+            val repository = ChannelRepositoryImpl(httpClient = httpClient)
+
+            val result = repository.getChannelsByGuildId(7)
+
+            assertTrue(result.isSuccess)
+            assertEquals("Bearer content-jwt-token", capturedRequest?.headers?.get(HttpHeaders.Authorization))
+        }
+
+    @Test
+    fun guildRepositoryIncludesAuthorizationHeaderWhenTokenPresent() =
+        runTest {
+            val tokenProvider = InMemoryAuthTokenProvider().apply { setToken("content-jwt-token") }
+            var capturedRequest: HttpRequestData? = null
+            val mockEngine =
+                MockEngine { request ->
+                    capturedRequest = request
+                    respondJson("[{\"id\":2,\"name\":\"Conflux\"}]")
+                }
+            val httpClient = HttpClientFactory.create(authTokenProvider = tokenProvider, engine = mockEngine)
+            val repository = GuildRepositoryImpl(httpClient = httpClient)
+
+            val result = repository.getGuildsByUserId(9)
+
+            assertTrue(result.isSuccess)
+            assertEquals("Bearer content-jwt-token", capturedRequest?.headers?.get(HttpHeaders.Authorization))
+        }
+
+    @Test
+    fun messageRepositoryIncludesAuthorizationHeaderWhenTokenPresent() =
+        runTest {
+            val tokenProvider = InMemoryAuthTokenProvider().apply { setToken("content-jwt-token") }
+            var capturedRequest: HttpRequestData? = null
+            val mockEngine =
+                MockEngine { request ->
+                    capturedRequest = request
+                    respondJson(
+                        "[{\"id\":3,\"author\":{\"id\":4,\"name\":\"Ada\"},\"content\":\"Hello\"}]",
+                    )
+                }
+            val httpClient = HttpClientFactory.create(authTokenProvider = tokenProvider, engine = mockEngine)
+            val repository = MessageRepositoryImpl(httpClient = httpClient)
+
+            val result = repository.getMessagesByChannelId(11)
+
+            assertTrue(result.isSuccess)
+            assertEquals("Bearer content-jwt-token", capturedRequest?.headers?.get(HttpHeaders.Authorization))
         }
 
     private fun mockClient(

@@ -1,13 +1,15 @@
 package io.github.conflux_org.conflux.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.rounded.JoinInner
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,18 +51,28 @@ fun GuildIcon(
     iconVector: ImageVector = Icons.Filled.JoinInner,
     onClick: () -> Unit = {},
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    val effectiveStatus =
+        when {
+            status == GuildIconStatus.Selected -> GuildIconStatus.Selected
+            isHovered -> GuildIconStatus.Hover
+            else -> status
+        }
+
     val shapePercent by animateIntAsState(
-        targetValue = if (status == GuildIconStatus.Hover || status == GuildIconStatus.Selected) 30 else 50,
-        animationSpec = spring(Spring.StiffnessLow),
+        targetValue = if (effectiveStatus == GuildIconStatus.Selected) 30 else 50,
+        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
     )
     val backgroundColor by animateColorAsState(
         targetValue =
-            if (status == GuildIconStatus.Selected) {
+            if (effectiveStatus == GuildIconStatus.Selected || effectiveStatus == GuildIconStatus.Hover) {
                 Color(0xFF5865F2)
             } else {
                 Color(0xFF2C2D31)
             },
-        animationSpec = tween(200),
+        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
     )
 
     Box(
@@ -67,11 +80,15 @@ fun GuildIcon(
             modifier
                 .height(48.dp)
                 .width(72.dp)
-                .clickable { onClick() },
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                ).hoverable(interactionSource),
         contentAlignment = Alignment.Center,
     ) {
         Box(modifier = Modifier.align(Alignment.CenterStart)) {
-            GuildIndicatorPill(status)
+            GuildIndicatorPill(effectiveStatus)
         }
         IconContainer(
             shapePercent = shapePercent,
@@ -145,7 +162,7 @@ fun GuildIndicatorPill(status: GuildIconStatus) {
         }
     val height by animateDpAsState(
         targetValue = targetHeight,
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
     )
     val width = 4.dp
     Box(
@@ -160,6 +177,7 @@ fun GuildIndicatorPill(status: GuildIconStatus) {
 
 @Composable
 fun IconContainer(
+    modifier: Modifier = Modifier,
     shapePercent: Int = 50,
     backgroundColor: Color = Color.Unspecified,
     iconVector: ImageVector = Icons.Rounded.JoinInner,
@@ -167,13 +185,12 @@ fun IconContainer(
 ) {
     Box(
         modifier =
-            Modifier
+            modifier
                 .size(48.dp)
+                .clip(RoundedCornerShape(shapePercent))
                 .then(
                     if (backgroundColor != Color.Unspecified && backgroundColor != Color.Transparent) {
-                        Modifier
-                            .clip(RoundedCornerShape(shapePercent))
-                            .background(backgroundColor)
+                        Modifier.background(backgroundColor)
                     } else {
                         Modifier
                     },
