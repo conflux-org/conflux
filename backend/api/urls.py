@@ -12,7 +12,7 @@ urlpatterns = [
     ),
     path(
         "guild/<int:guild_id>/channels/",
-        channel.get_channels_by_guild_id,
+        channel.channel_manage,
         name="guild-channels",
     ),
     path(
@@ -20,4 +20,5 @@ urlpatterns = [
         message.channel_messages,
         name="channel-messages",
     ),
+    path("guild/", guild.create_guild, name="guild-create"),
 ]

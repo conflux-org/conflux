@@ -1,9 +1,11 @@
+import json
 from http import HTTPStatus
 
+from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from api.models import Guild, User
+from api.models import Guild, GuildMember, User
 
 
 @require_http_methods(["GET"])
@@ -18,3 +20,37 @@ def get_guilds_by_user_id(request, user_id):
 
     data = [{"id": guild.id, "name": guild.name} for guild in guilds]
     return JsonResponse(data, safe=False, status=HTTPStatus.OK)
+
+
+@require_http_methods(["POST"])
+def create_guild(request):
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
+
+    name = data.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return JsonResponse(
+            {"error": "Name cannot be empty"}, status=HTTPStatus.BAD_REQUEST
+        )
+
+    with transaction.atomic():
+        guild = Guild.objects.create(
+            name=name.strip(),
+            owner_id=request.user_id,
+        )
+        GuildMember.objects.create(
+            guild=guild,
+            user_id=request.user_id,
+        )
+
+    return JsonResponse(
+        {
+            "id": guild.id,
+            "name": guild.name,
+            "owner_id": guild.owner_id,
+            "created_at": guild.created_at.isoformat(),
+        },
+        status=HTTPStatus.CREATED,
+    )
