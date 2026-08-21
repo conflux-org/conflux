@@ -1,4 +1,3 @@
-import json
 from http import HTTPStatus
 
 from django.db import transaction
@@ -24,12 +23,8 @@ def get_guilds_by_user_id(request, user_id):
 
 @require_http_methods(["POST"])
 def create_guild(request):
-    try:
-        data = json.loads(request.body)
-    except (json.JSONDecodeError, TypeError):
-        return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
 
-    name = data.get("name")
+    name = request.json.get("name")
     if not isinstance(name, str) or not name.strip():
         return JsonResponse(
             {"error": "Name cannot be empty"}, status=HTTPStatus.BAD_REQUEST

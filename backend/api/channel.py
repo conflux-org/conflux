@@ -1,4 +1,3 @@
-import json
 from http import HTTPStatus
 
 from django.http import JsonResponse
@@ -27,12 +26,9 @@ def get_channels_by_guild_id(request, guild_id):
 
 @require_http_methods(["POST"])
 def create_channel(request, guild_id):
-    try:
-        data = json.loads(request.body)
-    except (json.JSONDecodeError, TypeError):
-        return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
 
-    name = data.get("name")
+    name = request.json.get("name")
+
     if not isinstance(name, str) or not name.strip():
         return JsonResponse(
             {"error": "Name cannot be empty"}, status=HTTPStatus.BAD_REQUEST

@@ -1,4 +1,3 @@
-import json
 from http import HTTPStatus
 
 from django.http import JsonResponse
@@ -41,12 +40,8 @@ def get_messages_by_channel_id(request, channel_id):
 
 @require_http_methods(["POST"])
 def send_message(request, channel_id):
-    try:
-        data = json.loads(request.body)
-    except (json.JSONDecodeError, TypeError):
-        return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
 
-    content = data.get("content")
+    content = request.json.get("content")
     if not isinstance(content, str) or not content.strip():
         return JsonResponse(
             {"error": "Content cannot be empty"}, status=HTTPStatus.BAD_REQUEST
