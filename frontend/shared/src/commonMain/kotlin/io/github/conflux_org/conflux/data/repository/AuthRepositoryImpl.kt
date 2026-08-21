@@ -1,5 +1,6 @@
 package io.github.conflux_org.conflux.data.repository
 
+import io.github.conflux_org.conflux.core.auth.AuthTokenProvider
 import io.github.conflux_org.conflux.core.network.HttpClientFactory
 import io.github.conflux_org.conflux.data.model.ErrorResponse
 import io.github.conflux_org.conflux.data.model.LoginRequest
@@ -19,6 +20,7 @@ import io.ktor.http.isSuccess
 class AuthRepositoryImpl(
     private val httpClient: HttpClient = HttpClientFactory.create(),
     private val baseUrl: String = "http://127.0.0.1:8000",
+    private val authTokenProvider: AuthTokenProvider? = null,
 ) : AuthRepository {
     override suspend fun login(
         username: String,
@@ -32,6 +34,7 @@ class AuthRepositoryImpl(
                 }
             if (response.status.isSuccess()) {
                 val body = response.body<LoginResponse>()
+                authTokenProvider?.setToken(body.token)
                 Result.success(User(id = body.id, name = body.name))
             } else {
                 val body = response.body<ErrorResponse>()
@@ -53,6 +56,7 @@ class AuthRepositoryImpl(
                 }
             if (response.status.isSuccess()) {
                 val body = response.body<SignupResponse>()
+                authTokenProvider?.setToken(body.token)
                 Result.success(User(id = body.id, name = body.name))
             } else {
                 val body = response.body<ErrorResponse>()
