@@ -1,4 +1,3 @@
-import json
 from http import HTTPStatus
 
 from django.http import JsonResponse
@@ -10,13 +9,9 @@ from api.models import User
 
 @require_http_methods(["POST"])
 def login(request):
-    try:
-        data = json.loads(request.body)
-    except (json.JSONDecodeError, TypeError):
-        return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
 
-    username = data.get("username")
-    password = data.get("password")
+    username = request.json.get("username")
+    password = request.json.get("password")
 
     if not username or not password:
         return JsonResponse(
@@ -62,13 +57,8 @@ def login(request):
 @require_http_methods(["POST"])
 def sign_up(request):
 
-    try:
-        data = json.loads(request.body)
-    except (json.JSONDecodeError, TypeError):
-        return JsonResponse({"error": "Invalid JSON"}, status=HTTPStatus.BAD_REQUEST)
-
-    username = data.get("username")
-    password = data.get("password")
+    username = request.json.get("username")
+    password = request.json.get("password")
 
     if not username or not password:
         return JsonResponse(

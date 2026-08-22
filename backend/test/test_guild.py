@@ -50,3 +50,126 @@ class GuildAPITestCase(TestCase):
         url = reverse("user-guilds", kwargs={"user_id": self.user1.id})
         response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+
+    def test_create_guild_success(self):
+        url = reverse("guild-create")
+        payload = {"name": "Gaming Guild"}
+        response = self.client.post(
+            url,
+            data=payload,
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        data = response.json()
+        self.assertIn("id", data)
+        self.assertEqual(data["name"], "Gaming Guild")
+        self.assertEqual(data["owner_id"], self.user1.id)
+        self.assertIn("created_at", data)
+
+        # Verify database records
+        guild = Guild.objects.get(id=data["id"])
+        self.assertEqual(guild.name, "Gaming Guild")
+        self.assertEqual(guild.owner, self.user1)
+
+        # Verify creator is automatically added as a GuildMember
+        self.assertTrue(
+            GuildMember.objects.filter(
+                guild=guild,
+                user=self.user1,
+                deleted_at__isnull=True,
+            ).exists()
+        )
+
+        # Verify GET user guilds returns the new guild
+        get_resp = self.client.get(
+            reverse("user-guilds", kwargs={"user_id": self.user1.id}),
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(get_resp.status_code, HTTPStatus.OK)
+        guild_ids = {g["id"] for g in get_resp.json()}
+        self.assertIn(guild.id, guild_ids)
+
+    def test_create_guild_unauthorized(self):
+        url = reverse("guild-create")
+        payload = {"name": "Gaming Guild"}
+
+        # No token
+        response = self.client.post(url, data=payload, content_type="application/json")
+        self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(response.json(), {"error": "Unauthorized"})
+
+        # Invalid token
+        response = self.client.post(
+            url,
+            data=payload,
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer invalid_token",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
+        self.assertEqual(response.json(), {"error": "Unauthorized"})
+
+    def test_create_guild_empty_name(self):
+        url = reverse("guild-create")
+
+        # Missing name field
+        response = self.client.post(
+            url,
+            data={},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Name cannot be empty"})
+
+        # Empty string name
+        response = self.client.post(
+            url,
+            data={"name": ""},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Name cannot be empty"})
+
+        # Whitespace-only name
+        response = self.client.post(
+            url,
+            data={"name": "   \n\t  "},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Name cannot be empty"})
+
+        # Non-string name
+        response = self.client.post(
+            url,
+            data={"name": 12345},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Name cannot be empty"})
+
+    def test_create_guild_invalid_json(self):
+        url = reverse("guild-create")
+        response = self.client.post(
+            url,
+            data="invalid json {",
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.token1}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(response.json(), {"error": "Invalid JSON"})
+
+    def test_create_guild_method_not_allowed(self):
+        url = reverse("guild-create")
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+
+        response = self.client.put(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+
+        response = self.client.delete(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
+        self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)

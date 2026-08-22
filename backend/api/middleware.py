@@ -1,3 +1,5 @@
+import json
+import logging
 from http import HTTPStatus
 from typing import ClassVar
 
@@ -5,6 +7,8 @@ from django.http import JsonResponse
 
 from api.jwt_utils import decode_jwt_token
 from api.models import User
+
+logger = logging.getLogger(__name__)
 
 
 class JWTAuthenticationMiddleware:
@@ -60,3 +64,44 @@ class JWTAuthenticationMiddleware:
         request.user_name = payload.get("user_name")
 
         return self.get_response(request)
+
+
+class JSONParsingMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+
+        request.json = {}
+        if request.content_type == "application/json" and request.body:
+            try:
+                data = json.loads(request.body)
+                if not isinstance(data, dict):
+                    return JsonResponse(
+                        {"error": "Invalid JSON: root must be an object"},
+                        status=HTTPStatus.BAD_REQUEST,
+                    )
+                request.json = data
+            except (json.JSONDecodeError, UnicodeDecodeError, TypeError):
+                return JsonResponse(
+                    {"error": "Invalid JSON"},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+        return self.get_response(request)
+
+
+class APIExceptionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_exception(self, request, exception):
+        if request.path.startswith("/api/"):
+            logger.exception("Unhandled API Exception: %s", exception)
+            return JsonResponse(
+                {"error": "Internal server error"},
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+        return None
