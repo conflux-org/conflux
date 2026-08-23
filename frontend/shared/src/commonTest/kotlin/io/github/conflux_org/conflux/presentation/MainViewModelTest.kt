@@ -300,4 +300,23 @@ class MainViewModelTest {
             assertEquals(initialCount, viewModel.uiState.value.messages.size)
             assertEquals("無法發送訊息", viewModel.uiState.value.errorMessage)
         }
+
+    @Test
+    fun sendMessage_blankContent_setsErrorWithoutAddingMessage() =
+        runTest {
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = FakeGuildRepository(shouldSucceed = true),
+                    channelRepository = FakeChannelRepository(shouldSucceed = true),
+                    messageRepository = FakeMessageRepository(shouldSucceed = true),
+                )
+
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 77L))
+            val initialCount = viewModel.uiState.value.messages.size
+            viewModel.handleIntent(MainIntent.SendMessage("   \n\t"))
+
+            assertEquals(initialCount, viewModel.uiState.value.messages.size)
+            assertEquals("訊息內容不可為空白", viewModel.uiState.value.errorMessage)
+        }
 }

@@ -122,6 +122,11 @@ class MainViewModel(
             return
         }
 
+        if (content.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "訊息內容不可為空白") }
+            return
+        }
+
         viewModelScope.launch(mainDispatcher) {
             messageRepository
                 .sendMessage(channelId, content)
