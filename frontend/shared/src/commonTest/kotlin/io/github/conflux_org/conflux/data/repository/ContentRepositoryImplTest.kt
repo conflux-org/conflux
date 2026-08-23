@@ -224,6 +224,134 @@ class ContentRepositoryImplTest {
             assertEquals("發送訊息失敗 (500)", result.exceptionOrNull()?.message)
         }
 
+    @Test
+    fun guildRepositoryCreatesAndMapsGuild() =
+        runTest {
+            var request: HttpRequestData? = null
+            val repository =
+                GuildRepositoryImpl(
+                    httpClient =
+                        mockClient { capturedRequest ->
+                            request = capturedRequest
+                            respondJson(
+                                "{\"id\":42,\"name\":\"Rust Developers\",\"owner_id\":1,\"created_at\":\"2026-08-23T12:00:00\"}",
+                                HttpStatusCode.Created,
+                            )
+                        },
+                )
+
+            val result = repository.createGuild("Rust Developers")
+
+            assertEquals("POST", request?.method?.value)
+            assertEquals("/api/guild/", request?.url?.encodedPath)
+            assertEquals("application/json", request?.body?.contentType?.toString())
+            assertEquals(42L, result.getOrThrow().id)
+            assertEquals("Rust Developers", result.getOrThrow().name)
+        }
+
+    @Test
+    fun guildRepositoryCreateReturnsErrorOnFailure() =
+        runTest {
+            val repository =
+                GuildRepositoryImpl(
+                    httpClient =
+                        mockClient {
+                            respondJson("{\"error\":\"Name cannot be empty\"}", HttpStatusCode.BadRequest)
+                        },
+                )
+
+            val result = repository.createGuild("")
+
+            assertTrue(result.isFailure)
+            assertEquals("Name cannot be empty", result.exceptionOrNull()?.message)
+        }
+
+    @Test
+    fun guildRepositoryCreateIncludesAuthorizationHeader() =
+        runTest {
+            val tokenProvider = InMemoryAuthTokenProvider().apply { setToken("guild-create-jwt-token") }
+            var capturedRequest: HttpRequestData? = null
+            val mockEngine =
+                MockEngine { request ->
+                    capturedRequest = request
+                    respondJson(
+                        "{\"id\":42,\"name\":\"Rust Developers\",\"owner_id\":1,\"created_at\":\"2026-08-23T12:00:00\"}",
+                        HttpStatusCode.Created,
+                    )
+                }
+            val httpClient = HttpClientFactory.create(authTokenProvider = tokenProvider, engine = mockEngine)
+            val repository = GuildRepositoryImpl(httpClient = httpClient)
+
+            val result = repository.createGuild("Rust Developers")
+
+            assertTrue(result.isSuccess)
+            assertEquals("Bearer guild-create-jwt-token", capturedRequest?.headers?.get(HttpHeaders.Authorization))
+        }
+
+    @Test
+    fun channelRepositoryCreatesAndMapsChannel() =
+        runTest {
+            var request: HttpRequestData? = null
+            val repository =
+                ChannelRepositoryImpl(
+                    httpClient =
+                        mockClient { capturedRequest ->
+                            request = capturedRequest
+                            respondJson(
+                                "{\"id\":105,\"name\":\"random\",\"guild_id\":7,\"created_at\":\"2026-08-23T12:00:00\"}",
+                                HttpStatusCode.Created,
+                            )
+                        },
+                )
+
+            val result = repository.createChannel(7, "random")
+
+            assertEquals("POST", request?.method?.value)
+            assertEquals("/api/guild/7/channels/", request?.url?.encodedPath)
+            assertEquals("application/json", request?.body?.contentType?.toString())
+            assertEquals(105L, result.getOrThrow().id)
+            assertEquals("random", result.getOrThrow().name)
+        }
+
+    @Test
+    fun channelRepositoryCreateReturnsErrorOnFailure() =
+        runTest {
+            val repository =
+                ChannelRepositoryImpl(
+                    httpClient =
+                        mockClient {
+                            respondJson("{\"error\":\"Channel already exists\"}", HttpStatusCode.Conflict)
+                        },
+                )
+
+            val result = repository.createChannel(7, "random")
+
+            assertTrue(result.isFailure)
+            assertEquals("Channel already exists", result.exceptionOrNull()?.message)
+        }
+
+    @Test
+    fun channelRepositoryCreateIncludesAuthorizationHeader() =
+        runTest {
+            val tokenProvider = InMemoryAuthTokenProvider().apply { setToken("channel-create-jwt-token") }
+            var capturedRequest: HttpRequestData? = null
+            val mockEngine =
+                MockEngine { request ->
+                    capturedRequest = request
+                    respondJson(
+                        "{\"id\":105,\"name\":\"random\",\"guild_id\":7,\"created_at\":\"2026-08-23T12:00:00\"}",
+                        HttpStatusCode.Created,
+                    )
+                }
+            val httpClient = HttpClientFactory.create(authTokenProvider = tokenProvider, engine = mockEngine)
+            val repository = ChannelRepositoryImpl(httpClient = httpClient)
+
+            val result = repository.createChannel(7, "random")
+
+            assertTrue(result.isSuccess)
+            assertEquals("Bearer channel-create-jwt-token", capturedRequest?.headers?.get(HttpHeaders.Authorization))
+        }
+
     private fun mockClient(
         handler: suspend io.ktor.client.engine.mock.MockRequestHandleScope.(HttpRequestData) -> io.ktor.client.request.HttpResponseData,
     ) = HttpClient(MockEngine { request -> handler(request) }) {

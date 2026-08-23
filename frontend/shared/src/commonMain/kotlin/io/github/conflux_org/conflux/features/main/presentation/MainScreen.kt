@@ -1,6 +1,7 @@
 package io.github.conflux_org.conflux.features.main.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -8,10 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.conflux_org.conflux.core.ui.components.ChannelStatus
+import io.github.conflux_org.conflux.core.ui.components.CreateChannelDialog
+import io.github.conflux_org.conflux.core.ui.components.CreateGuildDialog
 import io.github.conflux_org.conflux.core.ui.components.MemberCategoryData
 import io.github.conflux_org.conflux.core.ui.components.MemberData
 import io.github.conflux_org.conflux.core.ui.components.MemberSidebar
@@ -114,6 +122,9 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             onGuildClick = { guild ->
                 viewModel.handleIntent(MainIntent.SelectGuild(guild))
             },
+            onAddGuildClick = {
+                viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
+            },
         )
 
         // 2. 頻道列表欄 (寬度 240.dp)
@@ -132,13 +143,29 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                         .height(48.dp)
                         .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = uiState.selectedGuild?.name.orEmpty(),
                     color = Color(0xFFF2F3F5),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
                 )
+                if (uiState.selectedGuild != null) {
+                    IconButton(
+                        onClick = {
+                            viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
+                        },
+                        modifier = Modifier.size(24.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = "新增頻道",
+                            tint = Color(0xFFB5BAC1),
+                        )
+                    }
+                }
             }
 
             HorizontalDivider(
@@ -196,6 +223,27 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             categories = sampleCategories,
         )
     }
+
+    // 對話框彈窗
+    CreateGuildDialog(
+        show = uiState.showCreateGuildDialog,
+        isLoading = uiState.isCreatingGuild,
+        errorMessage = uiState.createGuildError,
+        onDismiss = { viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(false)) },
+        onCreateGuild = { name -> viewModel.handleIntent(MainIntent.CreateGuild(name)) },
+    )
+
+    CreateChannelDialog(
+        show = uiState.showCreateChannelDialog,
+        isLoading = uiState.isCreatingChannel,
+        errorMessage = uiState.createChannelError,
+        onDismiss = { viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(false)) },
+        onCreateChannel = { name ->
+            uiState.selectedGuild?.let { guild ->
+                viewModel.handleIntent(MainIntent.CreateChannel(guild.id, name))
+            }
+        },
+    )
 }
 
 @Preview

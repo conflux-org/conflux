@@ -30,6 +30,109 @@ class MainViewModel(
             is MainIntent.SelectGuild -> selectGuild(intent.guild)
             is MainIntent.SelectChannel -> selectChannel(intent.channel)
             is MainIntent.SendMessage -> sendMessage(intent.content)
+            is MainIntent.ShowCreateGuildDialog -> showCreateGuildDialog(intent.show)
+            is MainIntent.ShowCreateChannelDialog -> showCreateChannelDialog(intent.show)
+            is MainIntent.CreateGuild -> createGuild(intent.name)
+            is MainIntent.CreateChannel -> createChannel(intent.guildId, intent.name)
+        }
+    }
+
+    private fun showCreateGuildDialog(show: Boolean) {
+        _uiState.update {
+            it.copy(
+                showCreateGuildDialog = show,
+                createGuildError = if (show) null else it.createGuildError,
+            )
+        }
+    }
+
+    private fun showCreateChannelDialog(show: Boolean) {
+        _uiState.update {
+            it.copy(
+                showCreateChannelDialog = show,
+                createChannelError = if (show) null else it.createChannelError,
+            )
+        }
+    }
+
+    private fun createGuild(name: String) {
+        if (name.isBlank()) {
+            _uiState.update {
+                it.copy(createGuildError = "伺服器名稱不能為空")
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                isCreatingGuild = true,
+                createGuildError = null,
+            )
+        }
+
+        viewModelScope.launch(mainDispatcher) {
+            guildRepository
+                .createGuild(name.trim())
+                .onSuccess { createdGuild ->
+                    _uiState.update {
+                        it.copy(
+                            guilds = it.guilds + createdGuild,
+                            isCreatingGuild = false,
+                            showCreateGuildDialog = false,
+                            createGuildError = null,
+                        )
+                    }
+                    selectGuild(createdGuild)
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isCreatingGuild = false,
+                            createGuildError = error.message ?: "建立伺服器失敗",
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun createChannel(
+        guildId: Long,
+        name: String,
+    ) {
+        if (name.isBlank()) {
+            _uiState.update {
+                it.copy(createChannelError = "頻道名稱不能為空")
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                isCreatingChannel = true,
+                createChannelError = null,
+            )
+        }
+
+        viewModelScope.launch(mainDispatcher) {
+            channelRepository
+                .createChannel(guildId, name.trim())
+                .onSuccess { createdChannel ->
+                    _uiState.update {
+                        it.copy(
+                            channels = it.channels + createdChannel,
+                            isCreatingChannel = false,
+                            showCreateChannelDialog = false,
+                            createChannelError = null,
+                        )
+                    }
+                    selectChannel(createdChannel)
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isCreatingChannel = false,
+                            createChannelError = error.message ?: "建立頻道失敗",
+                        )
+                    }
+                }
         }
     }
 

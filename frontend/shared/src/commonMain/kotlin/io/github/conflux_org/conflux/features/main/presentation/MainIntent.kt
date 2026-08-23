@@ -19,4 +19,21 @@ sealed interface MainIntent {
     data class SendMessage(
         val content: String,
     ) : MainIntent
+
+    data class CreateGuild(
+        val name: String,
+    ) : MainIntent
+
+    data class CreateChannel(
+        val guildId: Long,
+        val name: String,
+    ) : MainIntent
+
+    data class ShowCreateGuildDialog(
+        val show: Boolean,
+    ) : MainIntent
+
+    data class ShowCreateChannelDialog(
+        val show: Boolean,
+    ) : MainIntent
 }

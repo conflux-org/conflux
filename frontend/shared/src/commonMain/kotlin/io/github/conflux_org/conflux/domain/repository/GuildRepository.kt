@@ -4,4 +4,6 @@ import io.github.conflux_org.conflux.domain.model.Guild
 
 interface GuildRepository {
     suspend fun getGuildsByUserId(userId: Long): Result<List<Guild>>
+
+    suspend fun createGuild(name: String): Result<Guild>
 }
