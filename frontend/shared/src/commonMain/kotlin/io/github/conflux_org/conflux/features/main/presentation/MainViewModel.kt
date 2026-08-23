@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.conflux_org.conflux.domain.model.Channel
 import io.github.conflux_org.conflux.domain.model.Guild
-import io.github.conflux_org.conflux.domain.model.Message
-import io.github.conflux_org.conflux.domain.model.User
 import io.github.conflux_org.conflux.domain.repository.ChannelRepository
 import io.github.conflux_org.conflux.domain.repository.GuildRepository
 import io.github.conflux_org.conflux.domain.repository.MessageRepository
@@ -118,14 +116,24 @@ class MainViewModel(
     }
 
     private fun sendMessage(content: String) {
-        val currentMessages = _uiState.value.messages
-        val nextId = (currentMessages.maxOfOrNull { it.id } ?: 0L) + 1L
-        val newMessage =
-            Message(
-                id = nextId,
-                author = User(id = _uiState.value.currentUserId, name = "You"),
-                content = content,
-            )
-        _uiState.update { it.copy(messages = currentMessages + newMessage) }
+        val channelId = _uiState.value.selectedChannel?.id
+        if (channelId == null) {
+            _uiState.update { it.copy(errorMessage = "請先選擇頻道") }
+            return
+        }
+
+        viewModelScope.launch(mainDispatcher) {
+            messageRepository
+                .sendMessage(channelId, content)
+                .onSuccess { message ->
+                    _uiState.update {
+                        it.copy(messages = it.messages + message, errorMessage = null)
+                    }
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(errorMessage = error.message ?: "發送訊息失敗")
+                    }
+                }
+        }
     }
 }

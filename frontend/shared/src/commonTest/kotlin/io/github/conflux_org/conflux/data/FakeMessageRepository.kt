@@ -19,4 +19,14 @@ class FakeMessageRepository(
         } else {
             Result.failure(Exception(errorMessage))
         }
+
+    override suspend fun sendMessage(
+        channelId: Long,
+        content: String,
+    ): Result<Message> =
+        if (shouldSucceed) {
+            Result.success(mockMessages.first().copy(content = content))
+        } else {
+            Result.failure(Exception(errorMessage))
+        }
 }

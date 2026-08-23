@@ -252,7 +252,7 @@ class MainViewModelTest {
         }
 
     @Test
-    fun sendMessage_addsOptimisticMessageToMessagesList() =
+    fun sendMessage_addsServerMessageToMessagesList() =
         runTest {
             val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
             val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
@@ -276,6 +276,28 @@ class MainViewModelTest {
             assertEquals(initialCount + 1, state.messages.size)
             val lastMessage = state.messages.last()
             assertEquals(newMessageContent, lastMessage.content)
-            assertEquals(77L, lastMessage.author.id)
+            assertEquals(1L, lastMessage.author.id)
+        }
+
+    @Test
+    fun sendMessage_failure_setsErrorMessageWithoutAddingMessage() =
+        runTest {
+            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
+            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
+            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = false, errorMessage = "無法發送訊息")
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = fakeGuildRepo,
+                    channelRepository = fakeChannelRepo,
+                    messageRepository = fakeMessageRepo,
+                )
+
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 77L))
+            val initialCount = viewModel.uiState.value.messages.size
+            viewModel.handleIntent(MainIntent.SendMessage("failed"))
+
+            assertEquals(initialCount, viewModel.uiState.value.messages.size)
+            assertEquals("無法發送訊息", viewModel.uiState.value.errorMessage)
         }
 }

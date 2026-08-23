@@ -164,6 +164,66 @@ class ContentRepositoryImplTest {
             assertEquals("Bearer content-jwt-token", capturedRequest?.headers?.get(HttpHeaders.Authorization))
         }
 
+    @Test
+    fun messageRepositorySendsMessageAndMapsCreatedResponse() =
+        runTest {
+            var capturedRequest: HttpRequestData? = null
+            val httpClient =
+                HttpClient(
+                    MockEngine { request ->
+                        capturedRequest = request
+                        respondJson(
+                            "{\"id\":12,\"channel_id\":11,\"author\":{\"id\":4,\"name\":\"Ada\"},\"content\":\"Hello\",\"created_at\":\"2026-08-23T00:00:00Z\"}",
+                            HttpStatusCode.Created,
+                        )
+                    },
+                ) {
+                    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+                }
+            val repository = MessageRepositoryImpl(httpClient = httpClient)
+
+            val result = repository.sendMessage(11, "Hello")
+
+            assertEquals("POST", capturedRequest?.method?.value)
+            assertEquals("/api/channel/11/messages/", capturedRequest?.url?.encodedPath)
+            assertEquals(12, result.getOrThrow().id)
+            assertEquals("Hello", result.getOrThrow().content)
+        }
+
+    @Test
+    fun messageRepositoryReturnsApiErrorWhenSendFails() =
+        runTest {
+            val repository =
+                MessageRepositoryImpl(
+                    httpClient =
+                        mockClient {
+                            respondJson("{\"error\":\"Content cannot be empty\"}", HttpStatusCode.BadRequest)
+                        },
+                )
+
+            val result = repository.sendMessage(11, "")
+
+            assertTrue(result.isFailure)
+            assertEquals("Content cannot be empty", result.exceptionOrNull()?.message)
+        }
+
+    @Test
+    fun messageRepositoryReturnsFallbackErrorWhenServerFails() =
+        runTest {
+            val repository =
+                MessageRepositoryImpl(
+                    httpClient =
+                        mockClient {
+                            respondJson("{}", HttpStatusCode.InternalServerError)
+                        },
+                )
+
+            val result = repository.sendMessage(11, "Hello")
+
+            assertTrue(result.isFailure)
+            assertEquals("發送訊息失敗 (500)", result.exceptionOrNull()?.message)
+        }
+
     private fun mockClient(
         handler: suspend io.ktor.client.engine.mock.MockRequestHandleScope.(HttpRequestData) -> io.ktor.client.request.HttpResponseData,
     ) = HttpClient(MockEngine { request -> handler(request) }) {

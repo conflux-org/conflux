@@ -3,11 +3,15 @@ package io.github.conflux_org.conflux.data.repository
 import io.github.conflux_org.conflux.core.network.HttpClientFactory
 import io.github.conflux_org.conflux.data.model.ErrorResponse
 import io.github.conflux_org.conflux.data.model.MessageDto
+import io.github.conflux_org.conflux.data.model.SendMessageRequest
+import io.github.conflux_org.conflux.data.model.SendMessageResponseDto
 import io.github.conflux_org.conflux.domain.model.Message
 import io.github.conflux_org.conflux.domain.repository.MessageRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -29,6 +33,28 @@ class MessageRepositoryImpl(
             } else {
                 val body = response.body<ErrorResponse>()
                 Result.failure(Exception(body.error ?: "取得訊息失敗 (${response.status.value})"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    override suspend fun sendMessage(
+        channelId: Long,
+        content: String,
+    ): Result<Message> =
+        try {
+            val response =
+                httpClient.post("$baseUrl/api/channel/$channelId/messages/") {
+                    contentType(ContentType.Application.Json)
+                    setBody(SendMessageRequest(content))
+                }
+
+            if (response.status.isSuccess()) {
+                val body = response.body<SendMessageResponseDto>()
+                Result.success(body.toDomain())
+            } else {
+                val body = response.body<ErrorResponse>()
+                Result.failure(Exception(body.error ?: "發送訊息失敗 (${response.status.value})"))
             }
         } catch (e: Exception) {
             Result.failure(e)
