@@ -111,4 +111,23 @@ class AuthViewModelTest {
             assertEquals(null, successUserId)
             assertEquals("帳號或密碼錯誤", viewModel.uiState.value.loginError)
         }
+
+    @Test
+    fun signUp_withFailedCredentials_setsSignUpError() =
+        runTest {
+            val fakeRepo = FakeAuthRepository(shouldSucceed = false, errorMessage = "使用者名稱已被使用")
+            val viewModel = AuthViewModel(mainDispatcher = testDispatcher, authRepository = fakeRepo)
+
+            var successUserId: Long? = null
+            viewModel.onSignUpSuccess = { userId ->
+                successUserId = userId
+            }
+
+            viewModel.handleIntent(AuthIntent.SignUpUsernameChanged("duplicate_user"))
+            viewModel.handleIntent(AuthIntent.SignUpPasswordChanged("password123"))
+            viewModel.handleIntent(AuthIntent.SignUp)
+
+            assertEquals(null, successUserId)
+            assertEquals("使用者名稱已被使用", viewModel.uiState.value.signUpError)
+        }
 }

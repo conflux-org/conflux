@@ -2,11 +2,14 @@ package io.github.conflux_org.conflux.core.navigation
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import io.github.conflux_org.conflux.features.auth.presentation.AuthScreen
 import io.github.conflux_org.conflux.features.auth.presentation.AuthViewModel
+import io.github.conflux_org.conflux.features.main.presentation.MainIntent
 import io.github.conflux_org.conflux.features.main.presentation.MainScreen
+import io.github.conflux_org.conflux.features.main.presentation.MainViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -18,20 +21,24 @@ fun AppNavigation() {
         when (key) {
             is NavKey.Auth -> {
                 val authViewModel: AuthViewModel = koinViewModel()
-                authViewModel.onLoginSuccess = {
+                authViewModel.onLoginSuccess = { userId ->
                     backStack.clear()
-                    backStack.add(NavKey.Main)
+                    backStack.add(NavKey.Main(userId))
                 }
-                authViewModel.onSignUpSuccess = {
+                authViewModel.onSignUpSuccess = { userId ->
                     backStack.clear()
-                    backStack.add(NavKey.Main)
+                    backStack.add(NavKey.Main(userId))
                 }
 
                 AuthScreen(viewModel = authViewModel)
             }
 
             is NavKey.Main -> {
-                MainScreen()
+                val mainViewModel: MainViewModel = koinViewModel()
+                LaunchedEffect(key.userId) {
+                    mainViewModel.handleIntent(MainIntent.LoadInitialData(key.userId))
+                }
+                MainScreen(viewModel = mainViewModel)
             }
         }
     }

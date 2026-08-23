@@ -18,9 +18,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.EmojiEmotions
-import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -174,8 +174,14 @@ fun MessageInputField(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 if (text.isEmpty()) {
+                    val placeholder =
+                        if (channelName.isNotBlank()) {
+                            "發送訊息至 #$channelName"
+                        } else {
+                            "發送訊息"
+                        }
                     Text(
-                        text = "發送訊息至 #$channelName",
+                        text = placeholder,
                         color = Color(0xFF80848E),
                         fontSize = 15.sp,
                         maxLines = 1,
@@ -212,7 +218,7 @@ fun MessageInputField(
             if (text.isNotBlank()) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
-                    imageVector = Icons.Rounded.Send,
+                    imageVector = Icons.AutoMirrored.Rounded.Send,
                     contentDescription = "Send",
                     tint = Color(0xFF5865F2),
                     modifier =
@@ -248,21 +254,23 @@ fun MessageHeaderBar(
                     .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.Rounded.Tag,
-                contentDescription = "Channel Icon",
-                tint = Color(0xFF80848E),
-                modifier = Modifier.size(24.dp),
-            )
+            if (channelName.isNotBlank()) {
+                Icon(
+                    imageVector = Icons.Rounded.Tag,
+                    contentDescription = "Channel Icon",
+                    tint = Color(0xFF80848E),
+                    modifier = Modifier.size(24.dp),
+                )
 
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-            Text(
-                text = channelName,
-                color = Color(0xFFF2F3F5),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
+                Text(
+                    text = channelName,
+                    color = Color(0xFFF2F3F5),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
 
         HorizontalDivider(
@@ -282,7 +290,7 @@ fun MessageHeaderBar(
  */
 @Composable
 fun MessageArea(
-    channelName: String = "general",
+    channelName: String = "",
     messages: List<MessageData> = emptyList(),
     modifier: Modifier = Modifier,
     onSendMessage: (String) -> Unit = {},

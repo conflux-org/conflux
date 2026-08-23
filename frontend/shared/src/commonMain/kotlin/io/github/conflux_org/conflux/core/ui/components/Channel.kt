@@ -4,7 +4,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,9 +56,19 @@ fun TextChannelItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    val effectiveStatus =
+        when {
+            status == ChannelStatus.Selected -> ChannelStatus.Selected
+            isHovered -> ChannelStatus.Hover
+            else -> status
+        }
+
     val backgroundColor by animateColorAsState(
         targetValue =
-            when (status) {
+            when (effectiveStatus) {
                 ChannelStatus.Selected -> Color(0x33949BA4) // Discord 選中背景 (約 20% 灰度)
                 ChannelStatus.Hover -> Color(0x1A949BA4) // Discord 懸停背景 (約 10% 灰度)
                 else -> Color.Transparent
@@ -66,7 +78,7 @@ fun TextChannelItem(
 
     val contentColor by animateColorAsState(
         targetValue =
-            when (status) {
+            when (effectiveStatus) {
                 ChannelStatus.Selected, ChannelStatus.Unread -> Color(0xFFF2F3F5)
                 ChannelStatus.Hover -> Color(0xFFDBDEE1)
                 ChannelStatus.Idle -> Color(0xFF949BA4)
@@ -76,7 +88,7 @@ fun TextChannelItem(
 
     val iconColor by animateColorAsState(
         targetValue =
-            when (status) {
+            when (effectiveStatus) {
                 ChannelStatus.Selected, ChannelStatus.Unread -> Color(0xFFF2F3F5)
                 ChannelStatus.Hover -> Color(0xFFDBDEE1)
                 ChannelStatus.Idle -> Color(0xFF80848E)
@@ -85,7 +97,7 @@ fun TextChannelItem(
     )
 
     val fontWeight =
-        if (status == ChannelStatus.Selected || status == ChannelStatus.Unread) {
+        if (effectiveStatus == ChannelStatus.Unread) {
             FontWeight.Bold
         } else {
             FontWeight.Medium
@@ -100,10 +112,11 @@ fun TextChannelItem(
                 .clip(RoundedCornerShape(4.dp))
                 .background(backgroundColor)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = interactionSource,
                     indication = null,
                     onClick = onClick,
-                ).padding(horizontal = 8.dp),
+                ).hoverable(interactionSource)
+                .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {

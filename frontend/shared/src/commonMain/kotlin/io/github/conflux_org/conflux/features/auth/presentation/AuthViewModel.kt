@@ -1,10 +1,10 @@
 package io.github.conflux_org.conflux.features.auth.presentation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import io.github.conflux_org.conflux.data.repository.AuthRepositoryImpl
 import io.github.conflux_org.conflux.domain.repository.AuthRepository
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,7 +62,7 @@ class AuthViewModel(
     ) {
         _uiState.update { it.copy(isLoginLoading = true) }
 
-        CoroutineScope(mainDispatcher).launch {
+        viewModelScope.launch(mainDispatcher) {
             try {
                 authRepository
                     .login(username, password)
@@ -91,8 +91,20 @@ class AuthViewModel(
             return
         }
 
-        // TODO: Implement signup repository call in future steps
-        _uiState.update { it.copy(signUpError = "") }
-        onSignUpSuccess?.invoke(1L)
+        _uiState.update { it.copy(isSignUpLoading = true) }
+        viewModelScope.launch(mainDispatcher) {
+            try {
+                authRepository
+                    .signUp(username, password)
+                    .onSuccess { user ->
+                        _uiState.update { it.copy(signUpError = "") }
+                        onSignUpSuccess?.invoke(user.id)
+                    }.onFailure { error ->
+                        _uiState.update { it.copy(signUpError = error.message ?: "註冊失敗") }
+                    }
+            } finally {
+                _uiState.update { it.copy(isSignUpLoading = false) }
+            }
+        }
     }
 }
