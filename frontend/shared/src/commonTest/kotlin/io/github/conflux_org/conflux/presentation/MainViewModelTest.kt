@@ -319,4 +319,181 @@ class MainViewModelTest {
             assertEquals(initialCount, viewModel.uiState.value.messages.size)
             assertEquals("訊息內容不可為空白", viewModel.uiState.value.errorMessage)
         }
+
+    @Test
+    fun showCreateGuildDialog_updatesState() =
+        runTest {
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = FakeGuildRepository(),
+                    channelRepository = FakeChannelRepository(),
+                    messageRepository = FakeMessageRepository(),
+                )
+
+            viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
+            assertTrue(viewModel.uiState.value.showCreateGuildDialog)
+
+            viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(false))
+            assertFalse(viewModel.uiState.value.showCreateGuildDialog)
+        }
+
+    @Test
+    fun showCreateChannelDialog_updatesState() =
+        runTest {
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = FakeGuildRepository(),
+                    channelRepository = FakeChannelRepository(),
+                    messageRepository = FakeMessageRepository(),
+                )
+
+            viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
+            assertTrue(viewModel.uiState.value.showCreateChannelDialog)
+
+            viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(false))
+            assertFalse(viewModel.uiState.value.showCreateChannelDialog)
+        }
+
+    @Test
+    fun createGuild_success_appendsGuild_selectsIt_andClosesDialog() =
+        runTest {
+            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
+            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
+            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = fakeGuildRepo,
+                    channelRepository = fakeChannelRepo,
+                    messageRepository = fakeMessageRepo,
+                )
+
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+            viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
+
+            viewModel.handleIntent(MainIntent.CreateGuild("New Awesome Server"))
+
+            val state = viewModel.uiState.value
+            assertEquals(3, state.guilds.size)
+            assertEquals("New Awesome Server", state.guilds.last().name)
+            assertEquals(state.guilds.last(), state.selectedGuild)
+            assertFalse(state.showCreateGuildDialog)
+            assertNull(state.createGuildError)
+            assertFalse(state.isCreatingGuild)
+        }
+
+    @Test
+    fun createGuild_failure_setsCreateGuildError_andKeepsDialogOpen() =
+        runTest {
+            val fakeGuildRepo =
+                FakeGuildRepository(shouldSucceed = false, errorMessage = "伺服器名稱已被使用")
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = fakeGuildRepo,
+                    channelRepository = FakeChannelRepository(),
+                    messageRepository = FakeMessageRepository(),
+                )
+
+            viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
+            viewModel.handleIntent(MainIntent.CreateGuild("Existing Server"))
+
+            val state = viewModel.uiState.value
+            assertEquals("伺服器名稱已被使用", state.createGuildError)
+            assertTrue(state.showCreateGuildDialog)
+            assertFalse(state.isCreatingGuild)
+        }
+
+    @Test
+    fun createGuild_emptyName_setsError_doesNotCallRepo() =
+        runTest {
+            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = fakeGuildRepo,
+                    channelRepository = FakeChannelRepository(),
+                    messageRepository = FakeMessageRepository(),
+                )
+
+            viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
+            viewModel.handleIntent(MainIntent.CreateGuild("   "))
+
+            val state = viewModel.uiState.value
+            assertEquals("伺服器名稱不能為空", state.createGuildError)
+            assertTrue(state.showCreateGuildDialog)
+            assertFalse(state.isCreatingGuild)
+        }
+
+    @Test
+    fun createChannel_success_appendsChannel_selectsIt_andClosesDialog() =
+        runTest {
+            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
+            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
+            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = fakeGuildRepo,
+                    channelRepository = fakeChannelRepo,
+                    messageRepository = fakeMessageRepo,
+                )
+
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+            viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
+
+            viewModel.handleIntent(MainIntent.CreateChannel(guildId = 1L, name = "dev-talk"))
+
+            val state = viewModel.uiState.value
+            assertEquals(3, state.channels.size)
+            assertEquals("dev-talk", state.channels.last().name)
+            assertEquals(state.channels.last(), state.selectedChannel)
+            assertFalse(state.showCreateChannelDialog)
+            assertNull(state.createChannelError)
+            assertFalse(state.isCreatingChannel)
+        }
+
+    @Test
+    fun createChannel_failure_setsCreateChannelError_andKeepsDialogOpen() =
+        runTest {
+            val fakeChannelRepo =
+                FakeChannelRepository(shouldSucceed = false, errorMessage = "頻道名稱已存在")
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = FakeGuildRepository(),
+                    channelRepository = fakeChannelRepo,
+                    messageRepository = FakeMessageRepository(),
+                )
+
+            viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
+            viewModel.handleIntent(MainIntent.CreateChannel(guildId = 1L, name = "general"))
+
+            val state = viewModel.uiState.value
+            assertEquals("頻道名稱已存在", state.createChannelError)
+            assertTrue(state.showCreateChannelDialog)
+            assertFalse(state.isCreatingChannel)
+        }
+
+    @Test
+    fun createChannel_emptyName_setsError_doesNotCallRepo() =
+        runTest {
+            val viewModel =
+                MainViewModel(
+                    mainDispatcher = testDispatcher,
+                    guildRepository = FakeGuildRepository(),
+                    channelRepository = FakeChannelRepository(),
+                    messageRepository = FakeMessageRepository(),
+                )
+
+            viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
+            viewModel.handleIntent(MainIntent.CreateChannel(guildId = 1L, name = ""))
+
+            val state = viewModel.uiState.value
+            assertEquals("頻道名稱不能為空", state.createChannelError)
+            assertTrue(state.showCreateChannelDialog)
+            assertFalse(state.isCreatingChannel)
+        }
 }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Search
@@ -41,6 +42,7 @@ fun Sidebar(
     selectedGuildId: Long? = null,
     modifier: Modifier = Modifier,
     onGuildClick: (Guild) -> Unit = {},
+    onAddGuildClick: () -> Unit = {},
 ) {
     LazyColumn(
         modifier =
@@ -81,6 +83,13 @@ fun Sidebar(
             GuildIcon(
                 status = status,
                 onClick = { onGuildClick(guild) },
+            )
+        }
+        item {
+            SidebarActionIcon(
+                iconVector = Icons.Rounded.Add,
+                iconTint = Color(0xFF23A55A),
+                onClick = onAddGuildClick,
             )
         }
     }

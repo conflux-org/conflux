@@ -15,4 +15,10 @@ data class MainUiState(
     val selectedChannel: Channel? = null,
     val messages: List<Message> = emptyList(),
     val errorMessage: String? = null,
+    val isCreatingGuild: Boolean = false,
+    val isCreatingChannel: Boolean = false,
+    val showCreateGuildDialog: Boolean = false,
+    val showCreateChannelDialog: Boolean = false,
+    val createGuildError: String? = null,
+    val createChannelError: String? = null,
 )
