@@ -4,7 +4,16 @@ from django.test import TestCase
 from django.urls import reverse
 
 from api.jwt_utils import generate_jwt_token
-from api.models import Channel, Guild, User
+from api.models import (
+    Channel,
+    ChannelPermissionOverwrite,
+    Guild,
+    GuildMember,
+    OverwriteType,
+    Role,
+    User,
+)
+from api.permissions import PermissionFlags
 
 
 class ChannelAPITestCase(TestCase):
@@ -175,3 +184,57 @@ class ChannelAPITestCase(TestCase):
 
         response = self.client.delete(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+
+    def test_get_guild_channels_forbidden_for_outsider(self):
+        outsider = User.objects.create(name="Outsider", password="pass")
+        token = generate_jwt_token(outsider.id, outsider.name)
+        url = reverse("guild-channels", kwargs={"guild_id": self.guild1.id})
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_get_guild_channels_filters_hidden_channels(self):
+        member = User.objects.create(name="MemberBob", password="pass")
+        GuildMember.objects.create(guild=self.guild1, user=member)
+        Role.objects.create(
+            guild=self.guild1,
+            name="@everyone",
+            permissions=PermissionFlags.VIEW_CHANNEL,
+            position=0,
+            is_everyone=True,
+        )
+        # Deny VIEW_CHANNEL on channel2 for MemberBob
+        ChannelPermissionOverwrite.objects.create(
+            channel=self.channel2,
+            target_type=OverwriteType.MEMBER,
+            target_id=member.id,
+            allow=0,
+            deny=PermissionFlags.VIEW_CHANNEL,
+        )
+
+        token = generate_jwt_token(member.id, member.name)
+        url = reverse("guild-channels", kwargs={"guild_id": self.guild1.id})
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        data = response.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], self.channel1.id)
+
+    def test_create_channel_forbidden_without_manage_channels(self):
+        member = User.objects.create(name="MemberCharlie", password="pass")
+        GuildMember.objects.create(guild=self.guild1, user=member)
+        Role.objects.create(
+            guild=self.guild1,
+            name="@everyone",
+            permissions=PermissionFlags.VIEW_CHANNEL,
+            position=0,
+            is_everyone=True,
+        )
+        token = generate_jwt_token(member.id, member.name)
+        url = reverse("guild-channels", kwargs={"guild_id": self.guild1.id})
+        response = self.client.post(
+            url,
+            data={"name": "forbidden-channel"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)

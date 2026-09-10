@@ -212,3 +212,97 @@ class Message(SoftDeleteModel):
 
     def __str__(self):
         return f"Message({self.id}) in Channel({self.channel_id}) by User({self.author_id})"
+
+
+class Role(SoftDeleteModel):
+    guild = models.ForeignKey(
+        Guild,
+        on_delete=models.CASCADE,
+        related_name="roles",
+        db_column="guild_id",
+    )
+    name = models.CharField(max_length=255)
+    permissions = models.BigIntegerField(default=0)
+    position = models.IntegerField(default=0)
+    is_everyone = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "roles"
+        ordering = ("position", "id")
+        constraints = (
+            models.UniqueConstraint(
+                fields=["guild"],
+                condition=models.Q(is_everyone=True, deleted_at__isnull=True),
+                name="uk_roles_guild_is_everyone",
+            ),
+        )
+
+    def __str__(self):
+        return f"Role({self.name}, guild={self.guild_id})"
+
+
+class GuildMemberRole(SoftDeleteModel):
+    guild_member = models.ForeignKey(
+        GuildMember,
+        on_delete=models.CASCADE,
+        related_name="member_roles",
+        db_column="guild_member_id",
+    )
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name="member_roles",
+        db_column="role_id",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "guild_member_roles"
+        constraints = (
+            models.UniqueConstraint(
+                fields=["guild_member", "role"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="uk_guild_member_roles_member_role",
+            ),
+        )
+
+    def __str__(self):
+        return f"GuildMemberRole(member={self.guild_member_id}, role={self.role_id})"
+
+
+class OverwriteType(models.TextChoices):
+    ROLE = "ROLE", "Role"
+    MEMBER = "MEMBER", "Member"
+
+
+class ChannelPermissionOverwrite(SoftDeleteModel):
+    channel = models.ForeignKey(
+        Channel,
+        on_delete=models.CASCADE,
+        related_name="overwrites",
+        db_column="channel_id",
+    )
+    target_type = models.CharField(max_length=16, choices=OverwriteType.choices)
+    target_id = models.BigIntegerField()
+    allow = models.BigIntegerField(default=0)
+    deny = models.BigIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "channel_permission_overwrites"
+        constraints = (
+            models.UniqueConstraint(
+                fields=["channel", "target_type", "target_id"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="uk_channel_overwrites_channel_target",
+            ),
+        )
+
+    def __str__(self):
+        return (
+            f"Overwrite(channel={self.channel_id}, {self.target_type}:{self.target_id})"
+        )
