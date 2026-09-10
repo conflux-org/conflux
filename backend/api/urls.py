@@ -1,6 +1,6 @@
 from django.urls import path
 
-from api import auth, channel, guild, message
+from api import auth, channel, channel_overwrite, guild, message, role
 
 urlpatterns = [
     path("auth/login/", auth.login, name="login"),
@@ -21,4 +21,26 @@ urlpatterns = [
         name="channel-messages",
     ),
     path("guild/", guild.create_guild, name="guild-create"),
+    path("guild/<int:guild_id>/roles/", role.guild_roles, name="guild-roles"),
+    path(
+        "guild/<int:guild_id>/roles/<int:role_id>/",
+        role.guild_role_detail,
+        name="guild-role-detail",
+    ),
+    path(
+        "guild/<int:guild_id>/members/<int:user_id>/roles/<int:role_id>/",
+        role.guild_member_role_detail,
+        name="guild-member-role-detail",
+    ),
+    path(
+        "channel/<int:channel_id>/overwrites/",
+        channel_overwrite.channel_overwrites,
+        name="channel-overwrites",
+    ),
+    path(
+        "channel/<int:channel_id>/overwrites/<str:target_type>/<int:target_id>/",
+        channel_overwrite.channel_overwrite_detail,
+        name="channel-overwrite-detail",
+    ),
 ]
+

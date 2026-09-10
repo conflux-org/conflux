@@ -4,7 +4,9 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from api.models import Guild, GuildMember, User
+from api.models import Guild, GuildMember, Role, User
+from api.permissions import PermissionFlags
+
 
 
 @require_http_methods(["GET"])
@@ -38,6 +40,13 @@ def create_guild(request):
         GuildMember.objects.create(
             guild=guild,
             user_id=request.user_id,
+        )
+        Role.objects.create(
+            guild=guild,
+            name="@everyone",
+            permissions=PermissionFlags.VIEW_CHANNEL | PermissionFlags.SEND_MESSAGES,
+            position=0,
+            is_everyone=True,
         )
 
     return JsonResponse(
