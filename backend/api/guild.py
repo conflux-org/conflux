@@ -8,7 +8,6 @@ from api.models import Guild, GuildMember, Role, User
 from api.permissions import PermissionFlags
 
 
-
 @require_http_methods(["GET"])
 def get_guilds_by_user_id(request, user_id):
     if not User.objects.filter(id=user_id).exists():

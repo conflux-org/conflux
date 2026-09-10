@@ -4,10 +4,21 @@ from django.test import TestCase
 from django.urls import reverse
 
 from api.jwt_utils import generate_jwt_token
-from api.models import Channel, Guild, Message, User
+from api.models import (
+    Channel,
+    ChannelPermissionOverwrite,
+    Guild,
+    GuildMember,
+    Message,
+    OverwriteType,
+    Role,
+    User,
+)
+from api.permissions import PermissionFlags
 
 
 class MessageAPITestCase(TestCase):
+
     def setUp(self):
         self.user1 = User.objects.create(name="Alice", password="pass123")
         self.user2 = User.objects.create(name="Bob", password="pass123")
@@ -179,3 +190,53 @@ class MessageAPITestCase(TestCase):
 
         response = self.client.delete(url, HTTP_AUTHORIZATION=f"Bearer {self.token1}")
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+
+    def test_get_channel_messages_forbidden_for_outsider(self):
+        outsider = User.objects.create(name="Outsider", password="pass")
+        token = generate_jwt_token(outsider.id, outsider.name)
+        url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_get_channel_messages_forbidden_when_view_channel_denied(self):
+        member = User.objects.create(name="MemberDave", password="pass")
+        GuildMember.objects.create(guild=self.guild1, user=member)
+        Role.objects.create(
+            guild=self.guild1,
+            name="@everyone",
+            permissions=PermissionFlags.VIEW_CHANNEL,
+            position=0,
+            is_everyone=True,
+        )
+        ChannelPermissionOverwrite.objects.create(
+            channel=self.channel1,
+            target_type=OverwriteType.MEMBER,
+            target_id=member.id,
+            allow=0,
+            deny=PermissionFlags.VIEW_CHANNEL,
+        )
+        token = generate_jwt_token(member.id, member.name)
+        url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+
+    def test_send_message_forbidden_when_send_messages_denied(self):
+        member = User.objects.create(name="MemberEve", password="pass")
+        GuildMember.objects.create(guild=self.guild1, user=member)
+        Role.objects.create(
+            guild=self.guild1,
+            name="@everyone",
+            permissions=PermissionFlags.VIEW_CHANNEL,  # only VIEW_CHANNEL, no SEND_MESSAGES
+            position=0,
+            is_everyone=True,
+        )
+        token = generate_jwt_token(member.id, member.name)
+        url = reverse("channel-messages", kwargs={"channel_id": self.channel1.id})
+        response = self.client.post(
+            url,
+            data={"content": "I should be blocked"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+

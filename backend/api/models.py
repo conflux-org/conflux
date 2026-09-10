@@ -230,7 +230,7 @@ class Role(SoftDeleteModel):
 
     class Meta:
         db_table = "roles"
-        ordering = ["position", "id"]
+        ordering = ("position", "id")
         constraints = (
             models.UniqueConstraint(
                 fields=["guild"],
