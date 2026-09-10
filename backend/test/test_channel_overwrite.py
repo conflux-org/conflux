@@ -28,8 +28,12 @@ class ChannelOverwriteAPITestCase(TestCase):
         self.channel = Channel.objects.create(name="announcements", guild=self.guild)
 
         GuildMember.objects.create(guild=self.guild, user=self.owner)
-        self.manager_member = GuildMember.objects.create(guild=self.guild, user=self.manager)
-        self.normal_member = GuildMember.objects.create(guild=self.guild, user=self.member)
+        self.manager_member = GuildMember.objects.create(
+            guild=self.guild, user=self.manager
+        )
+        self.normal_member = GuildMember.objects.create(
+            guild=self.guild, user=self.member
+        )
 
         self.everyone_role = Role.objects.create(
             guild=self.guild,
@@ -45,7 +49,9 @@ class ChannelOverwriteAPITestCase(TestCase):
             permissions=PermissionFlags.MANAGE_CHANNELS,
             position=1,
         )
-        GuildMemberRole.objects.create(guild_member=self.manager_member, role=self.manager_role)
+        GuildMemberRole.objects.create(
+            guild_member=self.manager_member, role=self.manager_role
+        )
 
         self.owner_token = generate_jwt_token(self.owner.id, self.owner.name)
         self.manager_token = generate_jwt_token(self.manager.id, self.manager.name)
@@ -84,7 +90,10 @@ class ChannelOverwriteAPITestCase(TestCase):
                 "target_id": self.everyone_role.id,
             },
         )
-        payload = {"allow": PermissionFlags.VIEW_CHANNEL, "deny": PermissionFlags.SEND_MESSAGES}
+        payload = {
+            "allow": PermissionFlags.VIEW_CHANNEL,
+            "deny": PermissionFlags.SEND_MESSAGES,
+        }
         resp = self.client.put(
             url,
             data=payload,
@@ -189,7 +198,10 @@ class ChannelOverwriteAPITestCase(TestCase):
         )
         resp = self.client.put(
             overlap_url,
-            data={"allow": PermissionFlags.SEND_MESSAGES, "deny": PermissionFlags.SEND_MESSAGES},
+            data={
+                "allow": PermissionFlags.SEND_MESSAGES,
+                "deny": PermissionFlags.SEND_MESSAGES,
+            },
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Bearer {self.manager_token}",
         )
@@ -211,7 +223,9 @@ class ChannelOverwriteAPITestCase(TestCase):
                 "target_id": self.everyone_role.id,
             },
         )
-        resp = self.client.delete(url, HTTP_AUTHORIZATION=f"Bearer {self.manager_token}")
+        resp = self.client.delete(
+            url, HTTP_AUTHORIZATION=f"Bearer {self.manager_token}"
+        )
         self.assertEqual(resp.status_code, HTTPStatus.OK)
         self.assertFalse(
             ChannelPermissionOverwrite.objects.filter(

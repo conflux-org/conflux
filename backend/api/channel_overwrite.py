@@ -19,7 +19,9 @@ def channel_overwrites(request, channel_id):
     if not channel:
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
 
-    if not has_guild_permission(request.user_id, channel.guild, PermissionFlags.MANAGE_CHANNELS):
+    if not has_guild_permission(
+        request.user_id, channel.guild, PermissionFlags.MANAGE_CHANNELS
+    ):
         return JsonResponse(
             {"error": "Forbidden: missing MANAGE_CHANNELS permission"},
             status=HTTPStatus.FORBIDDEN,
@@ -53,7 +55,9 @@ def set_channel_overwrite(request, channel_id, target_type, target_id):
     if not channel:
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
 
-    if not has_guild_permission(request.user_id, channel.guild, PermissionFlags.MANAGE_CHANNELS):
+    if not has_guild_permission(
+        request.user_id, channel.guild, PermissionFlags.MANAGE_CHANNELS
+    ):
         return JsonResponse(
             {"error": "Forbidden: missing MANAGE_CHANNELS permission"},
             status=HTTPStatus.FORBIDDEN,
@@ -73,7 +77,9 @@ def set_channel_overwrite(request, channel_id, target_type, target_id):
                 status=HTTPStatus.NOT_FOUND,
             )
     else:
-        if not GuildMember.objects.filter(guild=channel.guild, user_id=target_id).exists():
+        if not GuildMember.objects.filter(
+            guild=channel.guild, user_id=target_id
+        ).exists():
             return JsonResponse(
                 {"error": "User not a member of this guild"},
                 status=HTTPStatus.NOT_FOUND,
@@ -136,7 +142,9 @@ def delete_channel_overwrite(request, channel_id, target_type, target_id):
     if not channel:
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
 
-    if not has_guild_permission(request.user_id, channel.guild, PermissionFlags.MANAGE_CHANNELS):
+    if not has_guild_permission(
+        request.user_id, channel.guild, PermissionFlags.MANAGE_CHANNELS
+    ):
         return JsonResponse(
             {"error": "Forbidden: missing MANAGE_CHANNELS permission"},
             status=HTTPStatus.FORBIDDEN,

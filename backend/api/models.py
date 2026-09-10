@@ -303,5 +303,6 @@ class ChannelPermissionOverwrite(SoftDeleteModel):
         )
 
     def __str__(self):
-        return f"Overwrite(channel={self.channel_id}, {self.target_type}:{self.target_id})"
-
+        return (
+            f"Overwrite(channel={self.channel_id}, {self.target_type}:{self.target_id})"
+        )

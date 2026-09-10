@@ -20,7 +20,9 @@ def get_messages_by_channel_id(request, channel_id):
     if not channel:
         return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
 
-    if not has_channel_permission(request.user_id, channel, PermissionFlags.VIEW_CHANNEL):
+    if not has_channel_permission(
+        request.user_id, channel, PermissionFlags.VIEW_CHANNEL
+    ):
         return JsonResponse(
             {"error": "Forbidden: missing VIEW_CHANNEL permission"},
             status=HTTPStatus.FORBIDDEN,
@@ -60,7 +62,9 @@ def send_message(request, channel_id):
 
     if not (
         has_channel_permission(request.user_id, channel, PermissionFlags.VIEW_CHANNEL)
-        and has_channel_permission(request.user_id, channel, PermissionFlags.SEND_MESSAGES)
+        and has_channel_permission(
+            request.user_id, channel, PermissionFlags.SEND_MESSAGES
+        )
     ):
         return JsonResponse(
             {"error": "Forbidden: missing SEND_MESSAGES permission"},
@@ -86,4 +90,3 @@ def send_message(request, channel_id):
         },
         status=HTTPStatus.CREATED,
     )
-

@@ -18,7 +18,6 @@ from api.permissions import PermissionFlags
 
 
 class MessageAPITestCase(TestCase):
-
     def setUp(self):
         self.user1 = User.objects.create(name="Alice", password="pass123")
         self.user2 = User.objects.create(name="Bob", password="pass123")
@@ -239,4 +238,3 @@ class MessageAPITestCase(TestCase):
             HTTP_AUTHORIZATION=f"Bearer {token}",
         )
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
-

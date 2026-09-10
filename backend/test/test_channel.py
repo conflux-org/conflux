@@ -17,7 +17,6 @@ from api.permissions import PermissionFlags
 
 
 class ChannelAPITestCase(TestCase):
-
     def setUp(self):
         self.user1 = User.objects.create(name="Alice", password="pass123")
         self.guild1 = Guild.objects.create(name="Guild Alpha", owner=self.user1)
@@ -239,4 +238,3 @@ class ChannelAPITestCase(TestCase):
             HTTP_AUTHORIZATION=f"Bearer {token}",
         )
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
-

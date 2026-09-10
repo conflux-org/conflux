@@ -17,8 +17,12 @@ class RoleAPITestCase(TestCase):
 
         self.guild = Guild.objects.create(name="Alpha Guild", owner=self.owner)
         GuildMember.objects.create(guild=self.guild, user=self.owner)
-        self.admin_member = GuildMember.objects.create(guild=self.guild, user=self.admin)
-        self.normal_member = GuildMember.objects.create(guild=self.guild, user=self.member)
+        self.admin_member = GuildMember.objects.create(
+            guild=self.guild, user=self.admin
+        )
+        self.normal_member = GuildMember.objects.create(
+            guild=self.guild, user=self.member
+        )
 
         # Create @everyone role
         self.everyone_role = Role.objects.create(
@@ -36,7 +40,9 @@ class RoleAPITestCase(TestCase):
             permissions=PermissionFlags.MANAGE_ROLES,
             position=1,
         )
-        GuildMemberRole.objects.create(guild_member=self.admin_member, role=self.admin_role)
+        GuildMemberRole.objects.create(
+            guild_member=self.admin_member, role=self.admin_role
+        )
 
         self.owner_token = generate_jwt_token(self.owner.id, self.owner.name)
         self.admin_token = generate_jwt_token(self.admin.id, self.admin.name)

@@ -35,7 +35,9 @@ def get_channels_by_guild_id(request, guild_id):
     data = [
         {"id": channel.id, "name": channel.name}
         for channel in channels
-        if has_channel_permission(request.user_id, channel, PermissionFlags.VIEW_CHANNEL)
+        if has_channel_permission(
+            request.user_id, channel, PermissionFlags.VIEW_CHANNEL
+        )
     ]
     return JsonResponse(data, safe=False, status=HTTPStatus.OK)
 
@@ -53,7 +55,9 @@ def create_channel(request, guild_id):
     if not guild:
         return JsonResponse({"error": "Guild not found"}, status=HTTPStatus.NOT_FOUND)
 
-    if not has_guild_permission(request.user_id, guild, PermissionFlags.MANAGE_CHANNELS):
+    if not has_guild_permission(
+        request.user_id, guild, PermissionFlags.MANAGE_CHANNELS
+    ):
         return JsonResponse(
             {"error": "Forbidden: missing MANAGE_CHANNELS permission"},
             status=HTTPStatus.FORBIDDEN,
@@ -78,4 +82,3 @@ def create_channel(request, guild_id):
         },
         status=HTTPStatus.CREATED,
     )
-

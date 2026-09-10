@@ -133,9 +133,13 @@ def compute_channel_permissions(user_id: int, channel: Channel) -> int:
     return permissions
 
 
-def has_guild_permission(user_id: int, guild: Guild, permission: PermissionFlags) -> bool:
+def has_guild_permission(
+    user_id: int, guild: Guild, permission: PermissionFlags
+) -> bool:
     return bool(compute_guild_permissions(user_id, guild) & permission)
 
 
-def has_channel_permission(user_id: int, channel: Channel, permission: PermissionFlags) -> bool:
+def has_channel_permission(
+    user_id: int, channel: Channel, permission: PermissionFlags
+) -> bool:
     return bool(compute_channel_permissions(user_id, channel) & permission)

@@ -43,4 +43,3 @@ urlpatterns = [
         name="channel-overwrite-detail",
     ),
 ]
-

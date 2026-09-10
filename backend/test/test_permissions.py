@@ -28,8 +28,12 @@ class PermissionCalculationTestCase(TestCase):
         self.guild = Guild.objects.create(name="Test Guild", owner=self.owner)
         self.channel = Channel.objects.create(name="general", guild=self.guild)
 
-        self.owner_member = GuildMember.objects.create(guild=self.guild, user=self.owner)
-        self.guild_member = GuildMember.objects.create(guild=self.guild, user=self.member)
+        self.owner_member = GuildMember.objects.create(
+            guild=self.guild, user=self.owner
+        )
+        self.guild_member = GuildMember.objects.create(
+            guild=self.guild, user=self.member
+        )
 
         # Baseline @everyone role
         self.everyone_role = Role.objects.create(
@@ -43,8 +47,16 @@ class PermissionCalculationTestCase(TestCase):
     def test_owner_bypass_guild_permissions(self):
         perms = compute_guild_permissions(self.owner.id, self.guild)
         self.assertEqual(perms, PermissionFlags.ALL_PERMISSIONS)
-        self.assertTrue(has_guild_permission(self.owner.id, self.guild, PermissionFlags.ADMINISTRATOR))
-        self.assertTrue(has_guild_permission(self.owner.id, self.guild, PermissionFlags.MANAGE_GUILD))
+        self.assertTrue(
+            has_guild_permission(
+                self.owner.id, self.guild, PermissionFlags.ADMINISTRATOR
+            )
+        )
+        self.assertTrue(
+            has_guild_permission(
+                self.owner.id, self.guild, PermissionFlags.MANAGE_GUILD
+            )
+        )
 
     def test_owner_bypass_channel_permissions(self):
         # Even if there is an explicit deny overwrite for owner, owner bypasses it
@@ -57,21 +69,45 @@ class PermissionCalculationTestCase(TestCase):
         )
         perms = compute_channel_permissions(self.owner.id, self.channel)
         self.assertEqual(perms, PermissionFlags.ALL_PERMISSIONS)
-        self.assertTrue(has_channel_permission(self.owner.id, self.channel, PermissionFlags.VIEW_CHANNEL))
+        self.assertTrue(
+            has_channel_permission(
+                self.owner.id, self.channel, PermissionFlags.VIEW_CHANNEL
+            )
+        )
 
     def test_outsider_has_no_permissions(self):
         self.assertEqual(compute_guild_permissions(self.outsider.id, self.guild), 0)
         self.assertEqual(compute_channel_permissions(self.outsider.id, self.channel), 0)
-        self.assertFalse(has_guild_permission(self.outsider.id, self.guild, PermissionFlags.VIEW_CHANNEL))
-        self.assertFalse(has_channel_permission(self.outsider.id, self.channel, PermissionFlags.VIEW_CHANNEL))
+        self.assertFalse(
+            has_guild_permission(
+                self.outsider.id, self.guild, PermissionFlags.VIEW_CHANNEL
+            )
+        )
+        self.assertFalse(
+            has_channel_permission(
+                self.outsider.id, self.channel, PermissionFlags.VIEW_CHANNEL
+            )
+        )
 
     def test_everyone_baseline_permissions(self):
         perms = compute_guild_permissions(self.member.id, self.guild)
         expected = PermissionFlags.VIEW_CHANNEL | PermissionFlags.SEND_MESSAGES
         self.assertEqual(perms, expected)
-        self.assertTrue(has_guild_permission(self.member.id, self.guild, PermissionFlags.VIEW_CHANNEL))
-        self.assertTrue(has_guild_permission(self.member.id, self.guild, PermissionFlags.SEND_MESSAGES))
-        self.assertFalse(has_guild_permission(self.member.id, self.guild, PermissionFlags.MANAGE_ROLES))
+        self.assertTrue(
+            has_guild_permission(
+                self.member.id, self.guild, PermissionFlags.VIEW_CHANNEL
+            )
+        )
+        self.assertTrue(
+            has_guild_permission(
+                self.member.id, self.guild, PermissionFlags.SEND_MESSAGES
+            )
+        )
+        self.assertFalse(
+            has_guild_permission(
+                self.member.id, self.guild, PermissionFlags.MANAGE_ROLES
+            )
+        )
 
     def test_roles_permission_union(self):
         role_mod = Role.objects.create(
@@ -87,7 +123,9 @@ class PermissionCalculationTestCase(TestCase):
             position=2,
         )
         GuildMemberRole.objects.create(guild_member=self.guild_member, role=role_mod)
-        GuildMemberRole.objects.create(guild_member=self.guild_member, role=role_admin_lite)
+        GuildMemberRole.objects.create(
+            guild_member=self.guild_member, role=role_admin_lite
+        )
 
         perms = compute_guild_permissions(self.member.id, self.guild)
         expected = (
@@ -139,8 +177,16 @@ class PermissionCalculationTestCase(TestCase):
 
         perms = compute_channel_permissions(self.member.id, self.channel)
         self.assertEqual(perms, PermissionFlags.VIEW_CHANNEL)
-        self.assertTrue(has_channel_permission(self.member.id, self.channel, PermissionFlags.VIEW_CHANNEL))
-        self.assertFalse(has_channel_permission(self.member.id, self.channel, PermissionFlags.SEND_MESSAGES))
+        self.assertTrue(
+            has_channel_permission(
+                self.member.id, self.channel, PermissionFlags.VIEW_CHANNEL
+            )
+        )
+        self.assertFalse(
+            has_channel_permission(
+                self.member.id, self.channel, PermissionFlags.SEND_MESSAGES
+            )
+        )
 
     def test_channel_overwrite_role_precedence(self):
         # 1. @everyone denies SEND_MESSAGES
@@ -192,7 +238,11 @@ class PermissionCalculationTestCase(TestCase):
 
         perms = compute_channel_permissions(self.member.id, self.channel)
         self.assertEqual(perms, PermissionFlags.VIEW_CHANNEL)
-        self.assertFalse(has_channel_permission(self.member.id, self.channel, PermissionFlags.SEND_MESSAGES))
+        self.assertFalse(
+            has_channel_permission(
+                self.member.id, self.channel, PermissionFlags.SEND_MESSAGES
+            )
+        )
 
     def test_view_channel_dependency(self):
         # Deny VIEW_CHANNEL on channel
@@ -207,8 +257,16 @@ class PermissionCalculationTestCase(TestCase):
         # Without VIEW_CHANNEL, channel permissions are 0
         perms = compute_channel_permissions(self.member.id, self.channel)
         self.assertEqual(perms, 0)
-        self.assertFalse(has_channel_permission(self.member.id, self.channel, PermissionFlags.VIEW_CHANNEL))
-        self.assertFalse(has_channel_permission(self.member.id, self.channel, PermissionFlags.SEND_MESSAGES))
+        self.assertFalse(
+            has_channel_permission(
+                self.member.id, self.channel, PermissionFlags.VIEW_CHANNEL
+            )
+        )
+        self.assertFalse(
+            has_channel_permission(
+                self.member.id, self.channel, PermissionFlags.SEND_MESSAGES
+            )
+        )
 
     def test_soft_deleted_roles_and_overwrites_ignored(self):
         role = Role.objects.create(
