@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'roles',
-                'ordering': ['position', 'id'],
+                'ordering': ('position', 'id'),
             },
         ),
         migrations.CreateModel(
