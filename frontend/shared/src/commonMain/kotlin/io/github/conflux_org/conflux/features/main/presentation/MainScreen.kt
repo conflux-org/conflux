@@ -2,6 +2,7 @@ package io.github.conflux_org.conflux.features.main.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,6 +16,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,15 +29,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.conflux_org.conflux.core.ui.components.ChannelSettingsDialog
 import io.github.conflux_org.conflux.core.ui.components.ChannelStatus
 import io.github.conflux_org.conflux.core.ui.components.CreateChannelDialog
 import io.github.conflux_org.conflux.core.ui.components.CreateGuildDialog
+import io.github.conflux_org.conflux.core.ui.components.GuildSettingsDialog
 import io.github.conflux_org.conflux.core.ui.components.MemberCategoryData
 import io.github.conflux_org.conflux.core.ui.components.MemberData
+import io.github.conflux_org.conflux.core.ui.components.MemberRolesDialog
 import io.github.conflux_org.conflux.core.ui.components.MemberSidebar
 import io.github.conflux_org.conflux.core.ui.components.MessageArea
 import io.github.conflux_org.conflux.core.ui.components.MessageData
@@ -64,6 +71,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                                 avatarColor = Color(0xFFE91E63),
                                 status = UserStatus.Online,
                                 customStatus = "Coding KMP UI",
+                                roleIds = listOf(2L),
                             ),
                             MemberData(
                                 id = "m2",
@@ -71,6 +79,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                                 avatarColor = Color(0xFF5865F2),
                                 status = UserStatus.Online,
                                 isBot = true,
+                                roleIds = listOf(2L),
                             ),
                         ),
                 ),
@@ -109,6 +118,8 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             )
         }
 
+    val allMembers = remember(sampleCategories) { sampleCategories.flatMap { it.members }.distinctBy { it.id } }
+
     Row(
         modifier =
             Modifier
@@ -127,7 +138,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             },
         )
 
-        // 2. 頻道列表欄 (寬度 240.dp)
+        // 2. 頻道列表 (寬度 240.dp)
         Column(
             modifier =
                 Modifier
@@ -135,7 +146,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                     .fillMaxHeight()
                     .background(Color(0xFF2B2D31)),
         ) {
-            // 伺服器名稱 Header
+            // 頻道列表頂部伺服器名稱列
             Row(
                 modifier =
                     Modifier
@@ -146,53 +157,123 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = uiState.selectedGuild?.name.orEmpty(),
+                    text = uiState.selectedGuild?.name ?: "未選擇伺服器",
                     color = Color(0xFFF2F3F5),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
                 )
+
                 if (uiState.selectedGuild != null) {
-                    IconButton(
-                        onClick = {
-                            viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
-                        },
-                        modifier = Modifier.size(24.dp),
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = "新增頻道",
-                            tint = Color(0xFFB5BAC1),
-                        )
+                        IconButton(
+                            onClick = {
+                                viewModel.handleIntent(MainIntent.ShowGuildSettingsDialog(true))
+                            },
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Settings,
+                                contentDescription = "伺服器設定",
+                                tint = Color(0xFF949BA4),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+
+                        if (uiState.canManageChannels) {
+                            IconButton(
+                                onClick = {
+                                    viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
+                                },
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = "新增頻道",
+                                    tint = Color(0xFF949BA4),
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = Color(0xFF1F2023),
-            )
+            HorizontalDivider(color = Color(0xFF1F2023), thickness = 1.dp)
 
-            // 頻道清單
-            LazyColumn(
+            // 文字頻道分組標題
+            Row(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                items(uiState.channels, key = { it.id }) { channel ->
-                    val status =
-                        if (channel.id == uiState.selectedChannel?.id) {
-                            ChannelStatus.Selected
-                        } else {
-                            ChannelStatus.Idle
-                        }
+                Text(
+                    text = "文字頻道",
+                    color = Color(0xFF949BA4),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
 
-                    TextChannelItem(
-                        name = channel.name,
-                        status = status,
-                        onClick = { viewModel.handleIntent(MainIntent.SelectChannel(channel)) },
+            // 頻道清單
+            if (uiState.isLoadingChannels) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        color = Color(0xFF5865F2),
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
                     )
+                }
+            } else {
+                LazyColumn(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(horizontal = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    items(uiState.channels, key = { it.id }) { channel ->
+                        val isSelected = uiState.selectedChannel?.id == channel.id
+                        val status =
+                            when {
+                                isSelected -> ChannelStatus.Selected
+                                else -> ChannelStatus.Idle
+                            }
+
+                        val onSettingsClick: (() -> Unit)? =
+                            if (uiState.canManageChannels) {
+                                {
+                                    viewModel.handleIntent(
+                                        MainIntent.ShowChannelSettingsDialog(
+                                            show = true,
+                                            channel = channel,
+                                        ),
+                                    )
+                                }
+                            } else {
+                                null
+                            }
+
+                        TextChannelItem(
+                            name = channel.name,
+                            status = status,
+                            onSettingsClick = onSettingsClick,
+                            onClick = { viewModel.handleIntent(MainIntent.SelectChannel(channel)) },
+                        )
+                    }
                 }
             }
         }
@@ -213,6 +294,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             channelName = uiState.selectedChannel?.name.orEmpty(),
             messages = displayMessages,
             modifier = Modifier.weight(1f),
+            canSendMessage = uiState.canSendInSelectedChannel,
             onSendMessage = { text ->
                 viewModel.handleIntent(MainIntent.SendMessage(text))
             },
@@ -221,6 +303,9 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
         // 4. 右側成員側邊欄 (寬度 240.dp)
         MemberSidebar(
             categories = sampleCategories,
+            onMemberClick = { member ->
+                viewModel.handleIntent(MainIntent.ShowMemberRolesDialog(show = true, member = member))
+            },
         )
     }
 
@@ -244,6 +329,128 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             }
         },
     )
+
+    if (uiState.showGuildSettingsDialog) {
+        GuildSettingsDialog(
+            roles = uiState.roles,
+            selectedRole = uiState.selectedRoleForEdit,
+            isSaving = uiState.isSavingRole,
+            errorMessage = uiState.roleActionError,
+            canManageRoles = uiState.canManageRoles,
+            members = allMembers,
+            memberRoles = uiState.memberRoles,
+            onSelectRole = { role -> viewModel.handleIntent(MainIntent.SelectRoleForEdit(role)) },
+            onCreateRole = { name ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(MainIntent.CreateRole(guild.id, name))
+                }
+            },
+            onUpdateRole = { roleId, name, permissions ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(
+                        MainIntent.UpdateRole(guild.id, roleId, name, permissions),
+                    )
+                }
+            },
+            onDeleteRole = { roleId ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(MainIntent.DeleteRole(guild.id, roleId))
+                }
+            },
+            onAssignMemberRole = { userId, roleId ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(
+                        MainIntent.AssignMemberRole(
+                            guildId = guild.id,
+                            userId = userId,
+                            roleId = roleId,
+                        ),
+                    )
+                }
+            },
+            onRemoveMemberRole = { userId, roleId ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(
+                        MainIntent.RemoveMemberRole(
+                            guildId = guild.id,
+                            userId = userId,
+                            roleId = roleId,
+                        ),
+                    )
+                }
+            },
+            onDismiss = { viewModel.handleIntent(MainIntent.ShowGuildSettingsDialog(false)) },
+        )
+    }
+
+    if (uiState.showChannelSettingsDialog && (uiState.selectedChannelForEdit ?: uiState.selectedChannel) != null) {
+        val channelToEdit = uiState.selectedChannelForEdit ?: uiState.selectedChannel!!
+        ChannelSettingsDialog(
+            channel = channelToEdit,
+            roles = uiState.roles,
+            members = allMembers,
+            overwrites = uiState.channelOverwrites,
+            isLoading = uiState.isLoadingOverwrites,
+            isSaving = uiState.isSavingOverwrite,
+            errorMessage = uiState.overwriteActionError,
+            canManageChannels = uiState.canManageChannels,
+            onSetOverwrite = { targetType, targetId, allow, deny ->
+                viewModel.handleIntent(
+                    MainIntent.SetChannelOverwrite(channelToEdit.id, targetType, targetId, allow, deny),
+                )
+            },
+            onDeleteOverwrite = { targetType, targetId ->
+                viewModel.handleIntent(
+                    MainIntent.DeleteChannelOverwrite(channelToEdit.id, targetType, targetId),
+                )
+            },
+            onDismiss = { viewModel.handleIntent(MainIntent.ShowChannelSettingsDialog(false)) },
+        )
+    }
+
+    // 成員身分組管理對話框
+    if (uiState.showMemberRolesDialog && uiState.selectedMemberForRoles != null) {
+        val member = uiState.selectedMemberForRoles!!
+        val currentRoleIds =
+            uiState.memberRoles[member.id]
+                ?: uiState.memberRoles[member.id.removePrefix("m")]
+                ?: member.roleIds
+        MemberRolesDialog(
+            member = member,
+            roles = uiState.roles,
+            memberRoleIds = currentRoleIds,
+            canManageRoles = uiState.canManageRoles,
+            isModifying = uiState.isModifyingMemberRole,
+            errorMessage = uiState.memberRoleActionError,
+            onAssignRole = { roleId ->
+                uiState.selectedGuild?.let { guild ->
+                    val userId = member.id.removePrefix("m").toLongOrNull() ?: 1L
+                    viewModel.handleIntent(
+                        MainIntent.AssignMemberRole(
+                            guildId = guild.id,
+                            userId = userId,
+                            roleId = roleId,
+                        ),
+                    )
+                }
+            },
+            onRemoveRole = { roleId ->
+                uiState.selectedGuild?.let { guild ->
+                    val userId = member.id.removePrefix("m").toLongOrNull() ?: 1L
+                    viewModel.handleIntent(
+                        MainIntent.RemoveMemberRole(
+                            guildId = guild.id,
+                            userId = userId,
+                            roleId = roleId,
+                        ),
+                    )
+                }
+            },
+            onDismiss = {
+                viewModel.handleIntent(MainIntent.ShowMemberRolesDialog(show = false))
+            },
+        )
+    }
 }
 
 @Preview
