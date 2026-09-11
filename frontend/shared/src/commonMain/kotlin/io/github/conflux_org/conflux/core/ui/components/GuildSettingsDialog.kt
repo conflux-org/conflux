@@ -527,14 +527,32 @@ fun GuildSettingsDialog(
                                 }
                             }
                         } else {
-                            // 管理成員標籤頁 (直接內嵌即時搜尋與新增/移除成員)
+                            // 管理成員標籤頁 (無篩選時顯示所有成員，輸入時即時過濾)
                             var memberSearchQuery by remember { mutableStateOf("") }
+
+                            val matchingRoleMembers =
+                                remember(roleMembers, memberSearchQuery) {
+                                    if (memberSearchQuery.isBlank()) {
+                                        roleMembers
+                                    } else {
+                                        roleMembers.filter { it.name.contains(memberSearchQuery, ignoreCase = true) }
+                                    }
+                                }
+
+                            val matchingAvailableMembers =
+                                remember(availableMembers, memberSearchQuery) {
+                                    if (memberSearchQuery.isBlank()) {
+                                        availableMembers
+                                    } else {
+                                        availableMembers.filter { it.name.contains(memberSearchQuery, ignoreCase = true) }
+                                    }
+                                }
 
                             Column(modifier = Modifier.weight(1f)) {
                                 OutlinedTextField(
                                     value = memberSearchQuery,
                                     onValueChange = { memberSearchQuery = it },
-                                    placeholder = { Text("搜尋成員名稱以新增或篩選...", color = Color(0xFF949BA4), fontSize = 13.sp) },
+                                    placeholder = { Text("搜尋成員名稱...", color = Color(0xFF949BA4), fontSize = 13.sp) },
                                     leadingIcon = {
                                         Icon(
                                             imageVector = Icons.Rounded.Search,
@@ -574,25 +592,146 @@ fun GuildSettingsDialog(
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(10.dp),
                                 ) {
-                                    // 若管理員輸入搜尋字詞，且有未加入的成員，顯示可新增區塊
-                                    if (canManageRoles && memberSearchQuery.isNotBlank()) {
-                                        val matchingAvailable =
-                                            availableMembers.filter {
-                                                it.name.contains(
-                                                    memberSearchQuery,
-                                                    ignoreCase = true,
-                                                )
-                                            }
-                                        if (matchingAvailable.isNotEmpty()) {
+                                    if (matchingRoleMembers.isEmpty() && matchingAvailableMembers.isEmpty()) {
+                                        item {
+                                            val emptyPrompt =
+                                                if (memberSearchQuery.isBlank()) {
+                                                    "伺服器目前沒有任何成員"
+                                                } else {
+                                                    "找不到符合「$memberSearchQuery」的成員"
+                                                }
+                                            Text(
+                                                text = emptyPrompt,
+                                                color = Color(0xFF80848E),
+                                                fontSize = 13.sp,
+                                                modifier = Modifier.padding(vertical = 12.dp),
+                                            )
+                                        }
+                                    } else {
+                                        // 1. 已指派成員區塊
+                                        if (matchingRoleMembers.isNotEmpty() || memberSearchQuery.isBlank()) {
                                             item {
                                                 Text(
-                                                    text = "可新增至此身分組 (${matchingAvailable.size})",
-                                                    color = Color(0xFF5865F2),
-                                                    fontSize = 12.sp,
+                                                    text = "已指派成員 (${matchingRoleMembers.size})",
+                                                    color = Color(0xFFB5BAC1),
+                                                    fontSize = 13.sp,
                                                     fontWeight = FontWeight.Bold,
                                                 )
                                             }
-                                            items(matchingAvailable, key = { "avail_${it.id}" }) { member ->
+
+                                            if (matchingRoleMembers.isEmpty()) {
+                                                item {
+                                                    Text(
+                                                        text = "此身分組目前沒有任何成員",
+                                                        color = Color(0xFF80848E),
+                                                        fontSize = 13.sp,
+                                                        modifier = Modifier.padding(vertical = 4.dp),
+                                                    )
+                                                }
+                                            } else {
+                                                items(matchingRoleMembers, key = { "role_member_${it.id}" }) { member ->
+                                                    Row(
+                                                        modifier =
+                                                            Modifier
+                                                                .fillMaxWidth()
+                                                                .clip(RoundedCornerShape(4.dp))
+                                                                .background(Color(0xFF2B2D31))
+                                                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                    ) {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            modifier = Modifier.weight(1f),
+                                                        ) {
+                                                            UserAvatar(
+                                                                name = member.name,
+                                                                size = 28.dp,
+                                                                backgroundColor = member.avatarColor,
+                                                                status = member.status,
+                                                                statusBorderColor = Color(0xFF2B2D31),
+                                                            )
+                                                            Spacer(modifier = Modifier.width(10.dp))
+                                                            Column {
+                                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                                    Text(
+                                                                        text = member.name,
+                                                                        color = Color(0xFFF2F3F5),
+                                                                        fontSize = 14.sp,
+                                                                        fontWeight = FontWeight.SemiBold,
+                                                                    )
+                                                                    if (member.isBot) {
+                                                                        Spacer(modifier = Modifier.width(6.dp))
+                                                                        Box(
+                                                                            modifier =
+                                                                                Modifier
+                                                                                    .clip(RoundedCornerShape(3.dp))
+                                                                                    .background(Color(0xFF5865F2))
+                                                                                    .padding(horizontal = 4.dp, vertical = 1.dp),
+                                                                        ) {
+                                                                            Text(
+                                                                                text = "BOT",
+                                                                                color = Color.White,
+                                                                                fontSize = 9.sp,
+                                                                                fontWeight = FontWeight.Bold,
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                }
+                                                                if (!member.customStatus.isNullOrBlank()) {
+                                                                    Text(
+                                                                        text = member.customStatus,
+                                                                        color = Color(0xFF949BA4),
+                                                                        fontSize = 12.sp,
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+
+                                                        if (canManageRoles) {
+                                                            Button(
+                                                                onClick = {
+                                                                    val uid = member.id.removePrefix("m").toLongOrNull() ?: 1L
+                                                                    onRemoveMemberRole(uid, selectedRole.id)
+                                                                },
+                                                                colors =
+                                                                    ButtonDefaults.buttonColors(
+                                                                        containerColor = Color(0xFFDA373C),
+                                                                        contentColor = Color.White,
+                                                                    ),
+                                                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                                                shape = RoundedCornerShape(4.dp),
+                                                                modifier = Modifier.height(28.dp),
+                                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                                            ) {
+                                                                Text(text = "移除", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // 2. 可新增成員區塊
+                                        if (canManageRoles &&
+                                            (
+                                                matchingAvailableMembers.isNotEmpty() ||
+                                                    (memberSearchQuery.isBlank() && availableMembers.isNotEmpty())
+                                            )
+                                        ) {
+                                            item {
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                HorizontalDivider(color = Color(0xFF3F4147))
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Text(
+                                                    text = "可新增成員 (${matchingAvailableMembers.size})",
+                                                    color = Color(0xFF5865F2),
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                )
+                                            }
+
+                                            items(matchingAvailableMembers, key = { "avail_${it.id}" }) { member ->
                                                 Row(
                                                     modifier =
                                                         Modifier
@@ -667,127 +806,6 @@ fun GuildSettingsDialog(
                                                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                                                     ) {
                                                         Text(text = "新增", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                                    }
-                                                }
-                                            }
-
-                                            item {
-                                                Spacer(modifier = Modifier.height(8.dp))
-                                                HorizontalDivider(color = Color(0xFF3F4147))
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                            }
-                                        }
-                                    }
-
-                                    // 已指派成員清單
-                                    val displayedRoleMembers =
-                                        if (memberSearchQuery.isBlank()) {
-                                            roleMembers
-                                        } else {
-                                            roleMembers.filter { it.name.contains(memberSearchQuery, ignoreCase = true) }
-                                        }
-
-                                    item {
-                                        Text(
-                                            text = "擁有此身分組的成員 (${roleMembers.size})",
-                                            color = Color(0xFFB5BAC1),
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
-
-                                    if (displayedRoleMembers.isEmpty()) {
-                                        item {
-                                            val emptyPrompt =
-                                                if (memberSearchQuery.isBlank()) {
-                                                    "此身分組目前沒有任何成員"
-                                                } else {
-                                                    "找不到符合「$memberSearchQuery」的已指派成員"
-                                                }
-                                            Text(
-                                                text = emptyPrompt,
-                                                color = Color(0xFF80848E),
-                                                fontSize = 13.sp,
-                                                modifier = Modifier.padding(vertical = 8.dp),
-                                            )
-                                        }
-                                    } else {
-                                        items(displayedRoleMembers, key = { "role_member_${it.id}" }) { member ->
-                                            Row(
-                                                modifier =
-                                                    Modifier
-                                                        .fillMaxWidth()
-                                                        .clip(RoundedCornerShape(4.dp))
-                                                        .background(Color(0xFF2B2D31))
-                                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                            ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.weight(1f),
-                                                ) {
-                                                    UserAvatar(
-                                                        name = member.name,
-                                                        size = 28.dp,
-                                                        backgroundColor = member.avatarColor,
-                                                        status = member.status,
-                                                        statusBorderColor = Color(0xFF2B2D31),
-                                                    )
-                                                    Spacer(modifier = Modifier.width(10.dp))
-                                                    Column {
-                                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                                            Text(
-                                                                text = member.name,
-                                                                color = Color(0xFFF2F3F5),
-                                                                fontSize = 14.sp,
-                                                                fontWeight = FontWeight.SemiBold,
-                                                            )
-                                                            if (member.isBot) {
-                                                                Spacer(modifier = Modifier.width(6.dp))
-                                                                Box(
-                                                                    modifier =
-                                                                        Modifier
-                                                                            .clip(RoundedCornerShape(3.dp))
-                                                                            .background(Color(0xFF5865F2))
-                                                                            .padding(horizontal = 4.dp, vertical = 1.dp),
-                                                                ) {
-                                                                    Text(
-                                                                        text = "BOT",
-                                                                        color = Color.White,
-                                                                        fontSize = 9.sp,
-                                                                        fontWeight = FontWeight.Bold,
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                        if (!member.customStatus.isNullOrBlank()) {
-                                                            Text(
-                                                                text = member.customStatus,
-                                                                color = Color(0xFF949BA4),
-                                                                fontSize = 12.sp,
-                                                            )
-                                                        }
-                                                    }
-                                                }
-
-                                                if (canManageRoles) {
-                                                    Button(
-                                                        onClick = {
-                                                            val uid = member.id.removePrefix("m").toLongOrNull() ?: 1L
-                                                            onRemoveMemberRole(uid, selectedRole.id)
-                                                        },
-                                                        colors =
-                                                            ButtonDefaults.buttonColors(
-                                                                containerColor = Color(0xFFDA373C),
-                                                                contentColor = Color.White,
-                                                            ),
-                                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                                        shape = RoundedCornerShape(4.dp),
-                                                        modifier = Modifier.height(28.dp),
-                                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                                    ) {
-                                                        Text(text = "移除", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                                     }
                                                 }
                                             }

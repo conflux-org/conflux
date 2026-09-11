@@ -143,6 +143,30 @@ fun ChannelSettingsDialog(
     var currentDeny by remember { mutableStateOf(0L) }
     var showAddTargetDialog by remember { mutableStateOf(false) }
 
+    // 計算已有覆寫的身分組清單 (或已選中的身分組，@everyone 永遠置頂)
+    val rolesWithOverwrites =
+        remember(roles, overwrites, selectedTarget) {
+            val list = mutableListOf<Role>()
+            val everyoneRole = roles.find { it.isEveryone } ?: roles.firstOrNull()
+            if (everyoneRole != null) {
+                list.add(everyoneRole)
+            }
+            val roleOverwrites = overwrites.filter { it.targetType == OverwriteTargetType.ROLE }
+            roleOverwrites.forEach { ow ->
+                val found = roles.find { it.id == ow.targetId }
+                if (found != null && !found.isEveryone) {
+                    list.add(found)
+                }
+            }
+            if (selectedTarget is OverwriteTarget.RoleTarget) {
+                val current = (selectedTarget as OverwriteTarget.RoleTarget).role
+                if (list.none { it.id == current.id }) {
+                    list.add(current)
+                }
+            }
+            list.distinctBy { it.id }
+        }
+
     // 找出所有已有覆寫的成員清單
     val memberOverwrites = overwrites.filter { it.targetType == OverwriteTargetType.MEMBER }
     val membersWithOverwrites =
@@ -244,8 +268,8 @@ fun ChannelSettingsDialog(
                             )
                         }
 
-                        // 身分組項目
-                        items(roles, key = { "role_${it.id}" }) { role ->
+                        // 身分組項目 (僅列出具備覆寫之身分組與預設 @everyone)
+                        items(rolesWithOverwrites, key = { "role_${it.id}" }) { role ->
                             val isSelected =
                                 (selectedTarget as? OverwriteTarget.RoleTarget)?.role?.id == role.id
                             val hasOverwrite =
@@ -272,19 +296,7 @@ fun ChannelSettingsDialog(
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     modifier = Modifier.weight(1f),
                                 )
-                                if (hasOverwrite && !role.isEveryone && canManageChannels) {
-                                    IconButton(
-                                        onClick = { onDeleteOverwrite(OverwriteTargetType.ROLE, role.id) },
-                                        modifier = Modifier.size(22.dp),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Close,
-                                            contentDescription = "移除身分組權限",
-                                            tint = Color(0xFFDA373C),
-                                            modifier = Modifier.size(15.dp),
-                                        )
-                                    }
-                                } else if (hasOverwrite) {
+                                if (hasOverwrite && !role.isEveryone) {
                                     Box(
                                         modifier =
                                             Modifier
@@ -359,19 +371,7 @@ fun ChannelSettingsDialog(
                                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                         )
                                     }
-                                    if (hasOverwrite && canManageChannels) {
-                                        IconButton(
-                                            onClick = { onDeleteOverwrite(OverwriteTargetType.MEMBER, memberId) },
-                                            modifier = Modifier.size(22.dp),
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Close,
-                                                contentDescription = "移除成員權限",
-                                                tint = Color(0xFFDA373C),
-                                                modifier = Modifier.size(15.dp),
-                                            )
-                                        }
-                                    } else if (hasOverwrite) {
+                                    if (hasOverwrite) {
                                         Box(
                                             modifier =
                                                 Modifier
@@ -570,6 +570,10 @@ fun ChannelSettingsDialog(
                                     onClick = {
                                         selectedTarget?.let { target ->
                                             onDeleteOverwrite(target.type, target.id)
+                                            val everyoneRole = roles.firstOrNull { it.isEveryone }
+                                            if (everyoneRole != null) {
+                                                selectedTarget = OverwriteTarget.RoleTarget(everyoneRole)
+                                            }
                                         }
                                     },
                                     colors =
