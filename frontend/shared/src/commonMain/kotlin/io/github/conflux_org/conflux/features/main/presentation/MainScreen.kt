@@ -388,6 +388,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
         ChannelSettingsDialog(
             channel = channelToEdit,
             roles = uiState.roles,
+            members = allMembers,
             overwrites = uiState.channelOverwrites,
             isLoading = uiState.isLoadingOverwrites,
             isSaving = uiState.isSavingOverwrite,

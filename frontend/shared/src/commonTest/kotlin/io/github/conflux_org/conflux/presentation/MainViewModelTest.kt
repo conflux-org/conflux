@@ -541,6 +541,32 @@ class MainViewModelTest {
         }
 
     @Test
+    fun setChannelOverwrite_memberTargetType_success_updatesOverwritesList() =
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            viewModel.handleIntent(
+                MainIntent.SetChannelOverwrite(
+                    channelId = 101L,
+                    targetType = OverwriteTargetType.MEMBER,
+                    targetId = 3L,
+                    allow = PermissionFlags.VIEW_CHANNEL,
+                    deny = PermissionFlags.SEND_MESSAGES,
+                ),
+            )
+
+            val state = viewModel.uiState.value
+            val ow =
+                state.channelOverwrites.find {
+                    it.channelId == 101L && it.targetType == OverwriteTargetType.MEMBER && it.targetId == 3L
+                }
+            assertTrue(ow != null)
+            assertEquals(PermissionFlags.VIEW_CHANNEL, ow.allow)
+            assertEquals(PermissionFlags.SEND_MESSAGES, ow.deny)
+        }
+
+    @Test
     fun deleteChannelOverwrite_success_removesFromOverwritesList() =
         runTest {
             val fakeOverwriteRepo =
