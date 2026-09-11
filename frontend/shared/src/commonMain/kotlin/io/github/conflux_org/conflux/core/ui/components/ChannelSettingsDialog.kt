@@ -5,12 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,14 +27,14 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -139,7 +141,7 @@ fun ChannelSettingsDialog(
     var selectedTarget by remember(roles) { mutableStateOf<OverwriteTarget?>(defaultTarget) }
     var currentAllow by remember { mutableStateOf(0L) }
     var currentDeny by remember { mutableStateOf(0L) }
-    var showAddTargetDropdown by remember { mutableStateOf(false) }
+    var showAddTargetDialog by remember { mutableStateOf(false) }
 
     // 找出所有已有覆寫的成員清單
     val memberOverwrites = overwrites.filter { it.targetType == OverwriteTargetType.MEMBER }
@@ -211,110 +213,16 @@ fun ChannelSettingsDialog(
                         )
 
                         if (canManageChannels) {
-                            Box {
-                                IconButton(
-                                    onClick = { showAddTargetDropdown = true },
-                                    modifier = Modifier.size(24.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Add,
-                                        contentDescription = "新增身分組或成員",
-                                        tint = Color(0xFF949BA4),
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-
-                                DropdownMenu(
-                                    expanded = showAddTargetDropdown,
-                                    onDismissRequest = { showAddTargetDropdown = false },
-                                    modifier = Modifier.background(Color(0xFF2B2D31)),
-                                ) {
-                                    // 身分組區塊
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                text = "身分組",
-                                                color = Color(0xFF949BA4),
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                            )
-                                        },
-                                        onClick = {},
-                                        enabled = false,
-                                    )
-                                    roles.forEach { role ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = role.name,
-                                                    color = Color(0xFFF2F3F5),
-                                                    fontSize = 13.sp,
-                                                )
-                                            },
-                                            onClick = {
-                                                selectedTarget = OverwriteTarget.RoleTarget(role)
-                                                showAddTargetDropdown = false
-                                            },
-                                        )
-                                    }
-
-                                    HorizontalDivider(
-                                        color = Color(0xFF3F4147),
-                                        modifier = Modifier.padding(vertical = 4.dp),
-                                    )
-
-                                    // 個別成員區塊
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                text = "個別成員",
-                                                color = Color(0xFF949BA4),
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                            )
-                                        },
-                                        onClick = {},
-                                        enabled = false,
-                                    )
-                                    if (members.isEmpty()) {
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    text = "無可用成員",
-                                                    color = Color(0xFF80848E),
-                                                    fontSize = 12.sp,
-                                                )
-                                            },
-                                            onClick = { showAddTargetDropdown = false },
-                                        )
-                                    } else {
-                                        members.forEach { member ->
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        UserAvatar(
-                                                            name = member.name,
-                                                            size = 20.dp,
-                                                            backgroundColor = member.avatarColor,
-                                                            status = member.status,
-                                                            statusBorderColor = Color(0xFF2B2D31),
-                                                        )
-                                                        Spacer(modifier = Modifier.width(8.dp))
-                                                        Text(
-                                                            text = member.name,
-                                                            color = Color(0xFFF2F3F5),
-                                                            fontSize = 13.sp,
-                                                        )
-                                                    }
-                                                },
-                                                onClick = {
-                                                    selectedTarget = OverwriteTarget.MemberTarget(member)
-                                                    showAddTargetDropdown = false
-                                                },
-                                            )
-                                        }
-                                    }
-                                }
+                            IconButton(
+                                onClick = { showAddTargetDialog = true },
+                                modifier = Modifier.size(24.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = "新增身分組或成員",
+                                    tint = Color(0xFF949BA4),
+                                    modifier = Modifier.size(18.dp),
+                                )
                             }
                         }
                     }
@@ -708,6 +616,259 @@ fun ChannelSettingsDialog(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 搜尋與新增身分組或成員覆寫對話框
+    if (showAddTargetDialog) {
+        var targetSearchQuery by remember { mutableStateOf("") }
+        val matchingRoles =
+            remember(roles, targetSearchQuery) {
+                val nonEveryone = roles.filter { !it.isEveryone }
+                if (targetSearchQuery.isBlank()) {
+                    nonEveryone
+                } else {
+                    nonEveryone.filter { it.name.contains(targetSearchQuery, ignoreCase = true) }
+                }
+            }
+        val matchingMembers =
+            remember(members, targetSearchQuery) {
+                if (targetSearchQuery.isBlank()) {
+                    members
+                } else {
+                    members.filter { it.name.contains(targetSearchQuery, ignoreCase = true) }
+                }
+            }
+
+        Dialog(
+            onDismissRequest = { showAddTargetDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth(0.5f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF313338))
+                        .padding(20.dp),
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text(
+                                text = "新增身分組或成員覆寫",
+                                color = Color(0xFFF2F3F5),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "頻道：#${channel.name}",
+                                color = Color(0xFF949BA4),
+                                fontSize = 13.sp,
+                            )
+                        }
+                        IconButton(
+                            onClick = { showAddTargetDialog = false },
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "關閉",
+                                tint = Color(0xFFB5BAC1),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = targetSearchQuery,
+                        onValueChange = { targetSearchQuery = it },
+                        placeholder = { Text("搜尋身分組或成員名稱...", color = Color(0xFF949BA4), fontSize = 14.sp) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Search,
+                                contentDescription = "搜尋",
+                                tint = Color(0xFF949BA4),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
+                        trailingIcon = {
+                            if (targetSearchQuery.isNotEmpty()) {
+                                IconButton(onClick = { targetSearchQuery = "" }, modifier = Modifier.size(24.dp)) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Close,
+                                        contentDescription = "清除搜尋",
+                                        tint = Color(0xFF949BA4),
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color(0xFFF2F3F5),
+                                unfocusedTextColor = Color(0xFFDBDEE1),
+                                focusedBorderColor = Color(0xFF5865F2),
+                                unfocusedBorderColor = Color(0xFF4E5058),
+                                focusedContainerColor = Color(0xFF1E1F22),
+                                unfocusedContainerColor = Color(0xFF1E1F22),
+                            ),
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (matchingRoles.isEmpty() && matchingMembers.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(160.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = "找不到符合「$targetSearchQuery」的身分組或成員",
+                                color = Color(0xFF949BA4),
+                                fontSize = 14.sp,
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            if (matchingRoles.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = "身分組",
+                                        color = Color(0xFF80848E),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                    )
+                                }
+                                items(matchingRoles, key = { "role_${it.id}" }) { role ->
+                                    Row(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(Color(0xFF2B2D31))
+                                                .clickable {
+                                                    selectedTarget = OverwriteTarget.RoleTarget(role)
+                                                    showAddTargetDialog = false
+                                                }.padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = role.name,
+                                            color = Color(0xFFF2F3F5),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (matchingMembers.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = "個別成員",
+                                        color = Color(0xFF80848E),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                                    )
+                                }
+                                items(matchingMembers, key = { "member_${it.id}" }) { member ->
+                                    Row(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(Color(0xFF2B2D31))
+                                                .clickable {
+                                                    selectedTarget = OverwriteTarget.MemberTarget(member)
+                                                    showAddTargetDialog = false
+                                                }.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        UserAvatar(
+                                            name = member.name,
+                                            size = 28.dp,
+                                            backgroundColor = member.avatarColor,
+                                            status = member.status,
+                                            statusBorderColor = Color(0xFF2B2D31),
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    text = member.name,
+                                                    color = Color(0xFFF2F3F5),
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                )
+                                                if (member.isBot) {
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Box(
+                                                        modifier =
+                                                            Modifier
+                                                                .clip(RoundedCornerShape(3.dp))
+                                                                .background(Color(0xFF5865F2))
+                                                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                                                    ) {
+                                                        Text(
+                                                            text = "BOT",
+                                                            color = Color.White,
+                                                            fontSize = 9.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            if (!member.customStatus.isNullOrBlank()) {
+                                                Text(
+                                                    text = member.customStatus,
+                                                    color = Color(0xFF949BA4),
+                                                    fontSize = 12.sp,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        Button(
+                            onClick = { showAddTargetDialog = false },
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF404249),
+                                    contentColor = Color(0xFFF2F3F5),
+                                ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.height(34.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                        ) {
+                            Text(text = "取消", fontSize = 13.sp)
                         }
                     }
                 }
