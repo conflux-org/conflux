@@ -4,13 +4,17 @@ import io.github.conflux_org.conflux.core.auth.AuthTokenProvider
 import io.github.conflux_org.conflux.core.auth.InMemoryAuthTokenProvider
 import io.github.conflux_org.conflux.core.network.HttpClientFactory
 import io.github.conflux_org.conflux.data.repository.AuthRepositoryImpl
+import io.github.conflux_org.conflux.data.repository.ChannelOverwriteRepositoryImpl
 import io.github.conflux_org.conflux.data.repository.ChannelRepositoryImpl
 import io.github.conflux_org.conflux.data.repository.GuildRepositoryImpl
 import io.github.conflux_org.conflux.data.repository.MessageRepositoryImpl
+import io.github.conflux_org.conflux.data.repository.RoleRepositoryImpl
 import io.github.conflux_org.conflux.domain.repository.AuthRepository
+import io.github.conflux_org.conflux.domain.repository.ChannelOverwriteRepository
 import io.github.conflux_org.conflux.domain.repository.ChannelRepository
 import io.github.conflux_org.conflux.domain.repository.GuildRepository
 import io.github.conflux_org.conflux.domain.repository.MessageRepository
+import io.github.conflux_org.conflux.domain.repository.RoleRepository
 import io.github.conflux_org.conflux.features.auth.presentation.AuthViewModel
 import io.github.conflux_org.conflux.features.main.presentation.MainViewModel
 import io.ktor.client.HttpClient
@@ -28,6 +32,8 @@ val appModule =
         single<ChannelRepository> { ChannelRepositoryImpl(get()) }
         single<GuildRepository> { GuildRepositoryImpl(get()) }
         single<MessageRepository> { MessageRepositoryImpl(get()) }
+        single<RoleRepository> { RoleRepositoryImpl(get()) }
+        single<ChannelOverwriteRepository> { ChannelOverwriteRepositoryImpl(get()) }
         viewModel { AuthViewModel(get(), get()) }
-        viewModel { MainViewModel(get(), get(), get(), get()) }
+        viewModel { MainViewModel(get(), get(), get(), get(), get(), get()) }
     }

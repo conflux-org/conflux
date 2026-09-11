@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,9 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.conflux_org.conflux.core.ui.components.ChannelSettingsDialog
 import io.github.conflux_org.conflux.core.ui.components.ChannelStatus
 import io.github.conflux_org.conflux.core.ui.components.CreateChannelDialog
 import io.github.conflux_org.conflux.core.ui.components.CreateGuildDialog
+import io.github.conflux_org.conflux.core.ui.components.GuildSettingsDialog
 import io.github.conflux_org.conflux.core.ui.components.MemberCategoryData
 import io.github.conflux_org.conflux.core.ui.components.MemberData
 import io.github.conflux_org.conflux.core.ui.components.MemberSidebar
@@ -153,17 +157,35 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                     modifier = Modifier.weight(1f),
                 )
                 if (uiState.selectedGuild != null) {
-                    IconButton(
-                        onClick = {
-                            viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
-                        },
-                        modifier = Modifier.size(24.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Add,
-                            contentDescription = "新增頻道",
-                            tint = Color(0xFFB5BAC1),
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = {
+                                viewModel.handleIntent(MainIntent.ShowGuildSettingsDialog(true))
+                            },
+                            modifier = Modifier.size(24.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Settings,
+                                contentDescription = "伺服器身分組設定",
+                                tint = Color(0xFFB5BAC1),
+                            )
+                        }
+
+                        if (uiState.canManageChannels) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            IconButton(
+                                onClick = {
+                                    viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
+                                },
+                                modifier = Modifier.size(24.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = "新增頻道",
+                                    tint = Color(0xFFB5BAC1),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -188,9 +210,21 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                             ChannelStatus.Idle
                         }
 
+                    val onSettingsClick: (() -> Unit)? =
+                        if (uiState.canManageChannels) {
+                            {
+                                viewModel.handleIntent(
+                                    MainIntent.ShowChannelSettingsDialog(show = true, channel = channel),
+                                )
+                            }
+                        } else {
+                            null
+                        }
+
                     TextChannelItem(
                         name = channel.name,
                         status = status,
+                        onSettingsClick = onSettingsClick,
                         onClick = { viewModel.handleIntent(MainIntent.SelectChannel(channel)) },
                     )
                 }
@@ -213,6 +247,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             channelName = uiState.selectedChannel?.name.orEmpty(),
             messages = displayMessages,
             modifier = Modifier.weight(1f),
+            canSendMessage = uiState.canSendInSelectedChannel,
             onSendMessage = { text ->
                 viewModel.handleIntent(MainIntent.SendMessage(text))
             },
@@ -244,6 +279,59 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             }
         },
     )
+
+    if (uiState.showGuildSettingsDialog) {
+        GuildSettingsDialog(
+            roles = uiState.roles,
+            selectedRole = uiState.selectedRoleForEdit,
+            isSaving = uiState.isSavingRole,
+            errorMessage = uiState.roleActionError,
+            canManageRoles = uiState.canManageRoles,
+            onSelectRole = { role -> viewModel.handleIntent(MainIntent.SelectRoleForEdit(role)) },
+            onCreateRole = { name ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(MainIntent.CreateRole(guild.id, name))
+                }
+            },
+            onUpdateRole = { roleId, name, permissions ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(
+                        MainIntent.UpdateRole(guild.id, roleId, name, permissions),
+                    )
+                }
+            },
+            onDeleteRole = { roleId ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(MainIntent.DeleteRole(guild.id, roleId))
+                }
+            },
+            onDismiss = { viewModel.handleIntent(MainIntent.ShowGuildSettingsDialog(false)) },
+        )
+    }
+
+    if (uiState.showChannelSettingsDialog && (uiState.selectedChannelForEdit ?: uiState.selectedChannel) != null) {
+        val channelToEdit = uiState.selectedChannelForEdit ?: uiState.selectedChannel!!
+        ChannelSettingsDialog(
+            channel = channelToEdit,
+            roles = uiState.roles,
+            overwrites = uiState.channelOverwrites,
+            isLoading = uiState.isLoadingOverwrites,
+            isSaving = uiState.isSavingOverwrite,
+            errorMessage = uiState.overwriteActionError,
+            canManageChannels = uiState.canManageChannels,
+            onSetOverwrite = { targetType, targetId, allow, deny ->
+                viewModel.handleIntent(
+                    MainIntent.SetChannelOverwrite(channelToEdit.id, targetType, targetId, allow, deny),
+                )
+            },
+            onDeleteOverwrite = { targetType, targetId ->
+                viewModel.handleIntent(
+                    MainIntent.DeleteChannelOverwrite(channelToEdit.id, targetType, targetId),
+                )
+            },
+            onDismiss = { viewModel.handleIntent(MainIntent.ShowChannelSettingsDialog(false)) },
+        )
+    }
 }
 
 @Preview

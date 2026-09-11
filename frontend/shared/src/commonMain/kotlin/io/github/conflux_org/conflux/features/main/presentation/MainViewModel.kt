@@ -4,9 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.conflux_org.conflux.domain.model.Channel
 import io.github.conflux_org.conflux.domain.model.Guild
+import io.github.conflux_org.conflux.domain.model.OverwriteTargetType
+import io.github.conflux_org.conflux.domain.model.Role
+import io.github.conflux_org.conflux.domain.repository.ChannelOverwriteRepository
 import io.github.conflux_org.conflux.domain.repository.ChannelRepository
 import io.github.conflux_org.conflux.domain.repository.GuildRepository
 import io.github.conflux_org.conflux.domain.repository.MessageRepository
+import io.github.conflux_org.conflux.domain.repository.RoleRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +24,8 @@ class MainViewModel(
     private val guildRepository: GuildRepository,
     private val channelRepository: ChannelRepository,
     private val messageRepository: MessageRepository,
+    private val roleRepository: RoleRepository,
+    private val channelOverwriteRepository: ChannelOverwriteRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -34,6 +40,26 @@ class MainViewModel(
             is MainIntent.ShowCreateChannelDialog -> showCreateChannelDialog(intent.show)
             is MainIntent.CreateGuild -> createGuild(intent.name)
             is MainIntent.CreateChannel -> createChannel(intent.guildId, intent.name)
+            is MainIntent.ShowGuildSettingsDialog -> showGuildSettingsDialog(intent.show)
+            is MainIntent.SelectRoleForEdit -> selectRoleForEdit(intent.role)
+            is MainIntent.CreateRole -> createRole(intent.guildId, intent.name, intent.permissions)
+            is MainIntent.UpdateRole -> updateRole(intent.guildId, intent.roleId, intent.name, intent.permissions)
+            is MainIntent.DeleteRole -> deleteRole(intent.guildId, intent.roleId)
+            is MainIntent.ShowChannelSettingsDialog -> showChannelSettingsDialog(intent.show, intent.channel)
+            is MainIntent.SetChannelOverwrite ->
+                setChannelOverwrite(
+                    intent.channelId,
+                    intent.targetType,
+                    intent.targetId,
+                    intent.allow,
+                    intent.deny,
+                )
+            is MainIntent.DeleteChannelOverwrite ->
+                deleteChannelOverwrite(
+                    intent.channelId,
+                    intent.targetType,
+                    intent.targetId,
+                )
         }
     }
 
@@ -52,6 +78,225 @@ class MainViewModel(
                 showCreateChannelDialog = show,
                 createChannelError = if (show) null else it.createChannelError,
             )
+        }
+    }
+
+    private fun showGuildSettingsDialog(show: Boolean) {
+        _uiState.update {
+            it.copy(
+                showGuildSettingsDialog = show,
+                roleActionError = null,
+                selectedRoleForEdit = if (show) it.selectedRoleForEdit ?: it.roles.firstOrNull() else null,
+            )
+        }
+    }
+
+    private fun selectRoleForEdit(role: Role?) {
+        _uiState.update {
+            it.copy(selectedRoleForEdit = role, roleActionError = null)
+        }
+    }
+
+    private fun createRole(
+        guildId: Long,
+        name: String,
+        permissions: Long,
+    ) {
+        if (name.isBlank()) {
+            _uiState.update { it.copy(roleActionError = "身分組名稱不能為空白") }
+            return
+        }
+
+        _uiState.update { it.copy(isSavingRole = true, roleActionError = null) }
+        viewModelScope.launch(mainDispatcher) {
+            roleRepository
+                .createRole(guildId = guildId, name = name.trim(), permissions = permissions)
+                .onSuccess { createdRole ->
+                    _uiState.update {
+                        it.copy(
+                            roles = it.roles + createdRole,
+                            selectedRoleForEdit = createdRole,
+                            isSavingRole = false,
+                            roleActionError = null,
+                        )
+                    }
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isSavingRole = false,
+                            roleActionError = error.message ?: "建立身分組失敗",
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun updateRole(
+        guildId: Long,
+        roleId: Long,
+        name: String?,
+        permissions: Long?,
+    ) {
+        _uiState.update { it.copy(isSavingRole = true, roleActionError = null) }
+        viewModelScope.launch(mainDispatcher) {
+            roleRepository
+                .updateRole(guildId = guildId, roleId = roleId, name = name?.trim(), permissions = permissions)
+                .onSuccess { updatedRole ->
+                    _uiState.update {
+                        val updatedRoles = it.roles.map { r -> if (r.id == updatedRole.id) updatedRole else r }
+                        it.copy(
+                            roles = updatedRoles,
+                            selectedRoleForEdit = updatedRole,
+                            isSavingRole = false,
+                            roleActionError = null,
+                        )
+                    }
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isSavingRole = false,
+                            roleActionError = error.message ?: "更新身分組失敗",
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun deleteRole(
+        guildId: Long,
+        roleId: Long,
+    ) {
+        _uiState.update { it.copy(isSavingRole = true, roleActionError = null) }
+        viewModelScope.launch(mainDispatcher) {
+            roleRepository
+                .deleteRole(guildId = guildId, roleId = roleId)
+                .onSuccess {
+                    _uiState.update {
+                        val remainingRoles = it.roles.filter { r -> r.id != roleId }
+                        it.copy(
+                            roles = remainingRoles,
+                            selectedRoleForEdit = remainingRoles.firstOrNull(),
+                            isSavingRole = false,
+                            roleActionError = null,
+                        )
+                    }
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isSavingRole = false,
+                            roleActionError = error.message ?: "刪除身分組失敗",
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun showChannelSettingsDialog(
+        show: Boolean,
+        channel: Channel?,
+    ) {
+        val targetChannel = channel ?: _uiState.value.selectedChannel
+        _uiState.update {
+            it.copy(
+                showChannelSettingsDialog = show,
+                selectedChannelForEdit = if (show) targetChannel else null,
+                overwriteActionError = null,
+            )
+        }
+        if (show && targetChannel != null) {
+            loadChannelOverwrites(targetChannel.id)
+        }
+    }
+
+    private fun loadChannelOverwrites(channelId: Long) {
+        _uiState.update { it.copy(isLoadingOverwrites = true) }
+        viewModelScope.launch(mainDispatcher) {
+            channelOverwriteRepository
+                .getChannelOverwrites(channelId)
+                .onSuccess { overwrites ->
+                    _uiState.update {
+                        it.copy(channelOverwrites = overwrites, isLoadingOverwrites = false)
+                    }
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingOverwrites = false,
+                            overwriteActionError = error.message ?: "載入頻道覆寫失敗",
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun setChannelOverwrite(
+        channelId: Long,
+        targetType: OverwriteTargetType,
+        targetId: Long,
+        allow: Long,
+        deny: Long,
+    ) {
+        _uiState.update { it.copy(isSavingOverwrite = true, overwriteActionError = null) }
+        viewModelScope.launch(mainDispatcher) {
+            channelOverwriteRepository
+                .setChannelOverwrite(channelId, targetType, targetId, allow, deny)
+                .onSuccess { overwrite ->
+                    _uiState.update { state ->
+                        val index =
+                            state.channelOverwrites.indexOfFirst { ow ->
+                                ow.channelId == channelId && ow.targetType == targetType && ow.targetId == targetId
+                            }
+                        val updatedList =
+                            if (index != -1) {
+                                state.channelOverwrites.mapIndexed { i, ow -> if (i == index) overwrite else ow }
+                            } else {
+                                state.channelOverwrites + overwrite
+                            }
+                        state.copy(
+                            channelOverwrites = updatedList,
+                            isSavingOverwrite = false,
+                            overwriteActionError = null,
+                        )
+                    }
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isSavingOverwrite = false,
+                            overwriteActionError = error.message ?: "設定頻道覆寫失敗",
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun deleteChannelOverwrite(
+        channelId: Long,
+        targetType: OverwriteTargetType,
+        targetId: Long,
+    ) {
+        _uiState.update { it.copy(isSavingOverwrite = true, overwriteActionError = null) }
+        viewModelScope.launch(mainDispatcher) {
+            channelOverwriteRepository
+                .deleteChannelOverwrite(channelId, targetType, targetId)
+                .onSuccess {
+                    _uiState.update { state ->
+                        val remaining =
+                            state.channelOverwrites.filterNot { ow ->
+                                ow.channelId == channelId && ow.targetType == targetType && ow.targetId == targetId
+                            }
+                        state.copy(
+                            channelOverwrites = remaining,
+                            isSavingOverwrite = false,
+                            overwriteActionError = null,
+                        )
+                    }
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isSavingOverwrite = false,
+                            overwriteActionError = error.message ?: "刪除頻道覆寫失敗",
+                        )
+                    }
+                }
         }
     }
 
@@ -168,10 +413,13 @@ class MainViewModel(
             it.copy(
                 selectedGuild = guild,
                 isLoadingChannels = true,
+                isLoadingRoles = true,
                 errorMessage = null,
                 channels = emptyList(),
                 selectedChannel = null,
                 messages = emptyList(),
+                roles = emptyList(),
+                selectedRoleForEdit = null,
             )
         }
         viewModelScope.launch(mainDispatcher) {
@@ -187,6 +435,26 @@ class MainViewModel(
                         it.copy(
                             isLoadingChannels = false,
                             errorMessage = error.message ?: "載入頻道失敗",
+                        )
+                    }
+                }
+        }
+        viewModelScope.launch(mainDispatcher) {
+            roleRepository
+                .getGuildRoles(guild.id)
+                .onSuccess { roles ->
+                    _uiState.update {
+                        it.copy(
+                            roles = roles,
+                            isLoadingRoles = false,
+                            selectedRoleForEdit = roles.firstOrNull(),
+                        )
+                    }
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingRoles = false,
+                            errorMessage = error.message ?: "載入身份組失敗",
                         )
                     }
                 }
@@ -216,6 +484,7 @@ class MainViewModel(
                     }
                 }
         }
+        loadChannelOverwrites(channel.id)
     }
 
     private fun sendMessage(content: String) {

@@ -1,11 +1,16 @@
 package io.github.conflux_org.conflux.presentation
 
+import io.github.conflux_org.conflux.data.FakeChannelOverwriteRepository
 import io.github.conflux_org.conflux.data.FakeChannelRepository
 import io.github.conflux_org.conflux.data.FakeGuildRepository
 import io.github.conflux_org.conflux.data.FakeMessageRepository
+import io.github.conflux_org.conflux.data.FakeRoleRepository
 import io.github.conflux_org.conflux.domain.model.Channel
+import io.github.conflux_org.conflux.domain.model.ChannelOverwrite
 import io.github.conflux_org.conflux.domain.model.Guild
 import io.github.conflux_org.conflux.domain.model.Message
+import io.github.conflux_org.conflux.domain.model.OverwriteTargetType
+import io.github.conflux_org.conflux.domain.model.PermissionFlags
 import io.github.conflux_org.conflux.domain.model.User
 import io.github.conflux_org.conflux.features.main.presentation.MainIntent
 import io.github.conflux_org.conflux.features.main.presentation.MainViewModel
@@ -37,20 +42,26 @@ class MainViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun createViewModel(
+        fakeGuildRepo: FakeGuildRepository = FakeGuildRepository(shouldSucceed = true),
+        fakeChannelRepo: FakeChannelRepository = FakeChannelRepository(shouldSucceed = true),
+        fakeMessageRepo: FakeMessageRepository = FakeMessageRepository(shouldSucceed = true),
+        fakeRoleRepo: FakeRoleRepository = FakeRoleRepository(shouldSucceed = true),
+        fakeChannelOverwriteRepo: FakeChannelOverwriteRepository = FakeChannelOverwriteRepository(shouldSucceed = true),
+    ): MainViewModel =
+        MainViewModel(
+            mainDispatcher = testDispatcher,
+            guildRepository = fakeGuildRepo,
+            channelRepository = fakeChannelRepo,
+            messageRepository = fakeMessageRepo,
+            roleRepository = fakeRoleRepo,
+            channelOverwriteRepository = fakeChannelOverwriteRepo,
+        )
+
     @Test
     fun loadInitialData_withGuildsChannelsMessages_cascadesAndSelectsFirstItems() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
-            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
-
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.LoadInitialData(userId = 42L))
 
@@ -61,6 +72,7 @@ class MainViewModelTest {
             assertEquals(2, state.channels.size)
             assertEquals(Channel(101L, "general"), state.selectedChannel)
             assertEquals(2, state.messages.size)
+            assertEquals(2, state.roles.size)
             assertFalse(state.isLoadingGuilds)
             assertFalse(state.isLoadingChannels)
             assertFalse(state.isLoadingMessages)
@@ -70,16 +82,9 @@ class MainViewModelTest {
     @Test
     fun loadInitialData_withEmptyGuilds_doesNotLoadChannelsOrMessages() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true, mockGuilds = emptyList())
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
-            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
-
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
+                createViewModel(
+                    fakeGuildRepo = FakeGuildRepository(shouldSucceed = true, mockGuilds = emptyList()),
                 )
 
             viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
@@ -97,17 +102,10 @@ class MainViewModelTest {
     @Test
     fun loadInitialData_guildRepoFailure_setsErrorMessage() =
         runTest {
-            val fakeGuildRepo =
-                FakeGuildRepository(shouldSucceed = false, errorMessage = "無法載入伺服器")
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
-            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
-
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
+                createViewModel(
+                    fakeGuildRepo =
+                        FakeGuildRepository(shouldSucceed = false, errorMessage = "無法載入伺服器"),
                 )
 
             viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
@@ -122,7 +120,6 @@ class MainViewModelTest {
     @Test
     fun selectGuild_success_updatesSelectedGuild_andLoadsChannelsAndFirstChannelMessages() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
             val customChannels =
                 listOf(
                     Channel(id = 201L, name = "gaming-chat"),
@@ -136,17 +133,12 @@ class MainViewModelTest {
                         content = "GG WP",
                     ),
                 )
-            val fakeChannelRepo =
-                FakeChannelRepository(shouldSucceed = true, mockChannels = customChannels)
-            val fakeMessageRepo =
-                FakeMessageRepository(shouldSucceed = true, mockMessages = customMessages)
-
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
+                createViewModel(
+                    fakeChannelRepo =
+                        FakeChannelRepository(shouldSucceed = true, mockChannels = customChannels),
+                    fakeMessageRepo =
+                        FakeMessageRepository(shouldSucceed = true, mockMessages = customMessages),
                 )
 
             val targetGuild = Guild(id = 2L, name = "Gaming Hub")
@@ -166,17 +158,10 @@ class MainViewModelTest {
     @Test
     fun selectGuild_channelRepoFailure_setsErrorMessage() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val fakeChannelRepo =
-                FakeChannelRepository(shouldSucceed = false, errorMessage = "無法載入頻道列表")
-            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
-
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
+                createViewModel(
+                    fakeChannelRepo =
+                        FakeChannelRepository(shouldSucceed = false, errorMessage = "無法載入頻道列表"),
                 )
 
             val targetGuild = Guild(id = 2L, name = "Gaming Hub")
@@ -193,8 +178,6 @@ class MainViewModelTest {
     @Test
     fun selectChannel_success_updatesSelectedChannel_andLoadsMessages() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
             val customMessages =
                 listOf(
                     Message(
@@ -203,15 +186,10 @@ class MainViewModelTest {
                         content = "Maintenance notice",
                     ),
                 )
-            val fakeMessageRepo =
-                FakeMessageRepository(shouldSucceed = true, mockMessages = customMessages)
-
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
+                createViewModel(
+                    fakeMessageRepo =
+                        FakeMessageRepository(shouldSucceed = true, mockMessages = customMessages),
                 )
 
             val targetChannel = Channel(id = 102L, name = "announcements")
@@ -228,17 +206,10 @@ class MainViewModelTest {
     @Test
     fun selectChannel_messageRepoFailure_setsErrorMessage() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
-            val fakeMessageRepo =
-                FakeMessageRepository(shouldSucceed = false, errorMessage = "無法載入頻道訊息")
-
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
+                createViewModel(
+                    fakeMessageRepo =
+                        FakeMessageRepository(shouldSucceed = false, errorMessage = "無法載入頻道訊息"),
                 )
 
             val targetChannel = Channel(id = 101L, name = "general")
@@ -254,17 +225,7 @@ class MainViewModelTest {
     @Test
     fun sendMessage_addsServerMessageToMessagesList() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
-            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
-
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.LoadInitialData(userId = 77L))
             val initialCount = viewModel.uiState.value.messages.size
@@ -282,15 +243,9 @@ class MainViewModelTest {
     @Test
     fun sendMessage_failure_setsErrorMessageWithoutAddingMessage() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
-            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = false, errorMessage = "無法發送訊息")
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
+                createViewModel(
+                    fakeMessageRepo = FakeMessageRepository(shouldSucceed = false, errorMessage = "無法發送訊息"),
                 )
 
             viewModel.handleIntent(MainIntent.LoadInitialData(userId = 77L))
@@ -304,13 +259,7 @@ class MainViewModelTest {
     @Test
     fun sendMessage_blankContent_setsErrorWithoutAddingMessage() =
         runTest {
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = FakeGuildRepository(shouldSucceed = true),
-                    channelRepository = FakeChannelRepository(shouldSucceed = true),
-                    messageRepository = FakeMessageRepository(shouldSucceed = true),
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.LoadInitialData(userId = 77L))
             val initialCount = viewModel.uiState.value.messages.size
@@ -323,13 +272,7 @@ class MainViewModelTest {
     @Test
     fun showCreateGuildDialog_updatesState() =
         runTest {
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = FakeGuildRepository(),
-                    channelRepository = FakeChannelRepository(),
-                    messageRepository = FakeMessageRepository(),
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
             assertTrue(viewModel.uiState.value.showCreateGuildDialog)
@@ -341,13 +284,7 @@ class MainViewModelTest {
     @Test
     fun showCreateChannelDialog_updatesState() =
         runTest {
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = FakeGuildRepository(),
-                    channelRepository = FakeChannelRepository(),
-                    messageRepository = FakeMessageRepository(),
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
             assertTrue(viewModel.uiState.value.showCreateChannelDialog)
@@ -359,16 +296,7 @@ class MainViewModelTest {
     @Test
     fun createGuild_success_appendsGuild_selectsIt_andClosesDialog() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
-            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
             viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
@@ -387,14 +315,10 @@ class MainViewModelTest {
     @Test
     fun createGuild_failure_setsCreateGuildError_andKeepsDialogOpen() =
         runTest {
-            val fakeGuildRepo =
-                FakeGuildRepository(shouldSucceed = false, errorMessage = "伺服器名稱已被使用")
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = FakeChannelRepository(),
-                    messageRepository = FakeMessageRepository(),
+                createViewModel(
+                    fakeGuildRepo =
+                        FakeGuildRepository(shouldSucceed = false, errorMessage = "伺服器名稱已被使用"),
                 )
 
             viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
@@ -409,14 +333,7 @@ class MainViewModelTest {
     @Test
     fun createGuild_emptyName_setsError_doesNotCallRepo() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = FakeChannelRepository(),
-                    messageRepository = FakeMessageRepository(),
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.ShowCreateGuildDialog(true))
             viewModel.handleIntent(MainIntent.CreateGuild("   "))
@@ -430,16 +347,7 @@ class MainViewModelTest {
     @Test
     fun createChannel_success_appendsChannel_selectsIt_andClosesDialog() =
         runTest {
-            val fakeGuildRepo = FakeGuildRepository(shouldSucceed = true)
-            val fakeChannelRepo = FakeChannelRepository(shouldSucceed = true)
-            val fakeMessageRepo = FakeMessageRepository(shouldSucceed = true)
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = fakeGuildRepo,
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = fakeMessageRepo,
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
             viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
@@ -458,14 +366,10 @@ class MainViewModelTest {
     @Test
     fun createChannel_failure_setsCreateChannelError_andKeepsDialogOpen() =
         runTest {
-            val fakeChannelRepo =
-                FakeChannelRepository(shouldSucceed = false, errorMessage = "頻道名稱已存在")
             val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = FakeGuildRepository(),
-                    channelRepository = fakeChannelRepo,
-                    messageRepository = FakeMessageRepository(),
+                createViewModel(
+                    fakeChannelRepo =
+                        FakeChannelRepository(shouldSucceed = false, errorMessage = "頻道名稱已存在"),
                 )
 
             viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
@@ -480,13 +384,7 @@ class MainViewModelTest {
     @Test
     fun createChannel_emptyName_setsError_doesNotCallRepo() =
         runTest {
-            val viewModel =
-                MainViewModel(
-                    mainDispatcher = testDispatcher,
-                    guildRepository = FakeGuildRepository(),
-                    channelRepository = FakeChannelRepository(),
-                    messageRepository = FakeMessageRepository(),
-                )
+            val viewModel = createViewModel()
 
             viewModel.handleIntent(MainIntent.ShowCreateChannelDialog(true))
             viewModel.handleIntent(MainIntent.CreateChannel(guildId = 1L, name = ""))
@@ -495,5 +393,182 @@ class MainViewModelTest {
             assertEquals("頻道名稱不能為空", state.createChannelError)
             assertTrue(state.showCreateChannelDialog)
             assertFalse(state.isCreatingChannel)
+        }
+
+    // --- Role & Guild Settings Tests ---
+
+    @Test
+    fun showGuildSettingsDialog_togglesStateAndSetsDefaultSelectedRole() =
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            viewModel.handleIntent(MainIntent.ShowGuildSettingsDialog(true))
+            assertTrue(viewModel.uiState.value.showGuildSettingsDialog)
+            assertEquals(
+                "@everyone",
+                viewModel.uiState.value.selectedRoleForEdit
+                    ?.name,
+            )
+
+            viewModel.handleIntent(MainIntent.ShowGuildSettingsDialog(false))
+            assertFalse(viewModel.uiState.value.showGuildSettingsDialog)
+            assertNull(viewModel.uiState.value.selectedRoleForEdit)
+        }
+
+    @Test
+    fun createRole_success_appendsRoleAndSelectsIt() =
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            viewModel.handleIntent(
+                MainIntent.CreateRole(
+                    guildId = 1L,
+                    name = "Moderator Tier 2",
+                    permissions = PermissionFlags.MANAGE_MESSAGES,
+                ),
+            )
+
+            val state = viewModel.uiState.value
+            assertEquals(3, state.roles.size)
+            assertEquals("Moderator Tier 2", state.roles.last().name)
+            assertEquals(state.roles.last(), state.selectedRoleForEdit)
+            assertNull(state.roleActionError)
+        }
+
+    @Test
+    fun createRole_blankName_setsRoleActionError() =
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            viewModel.handleIntent(MainIntent.CreateRole(guildId = 1L, name = "  "))
+
+            val state = viewModel.uiState.value
+            assertEquals("身分組名稱不能為空白", state.roleActionError)
+        }
+
+    @Test
+    fun updateRole_success_updatesRoleInListAndSelectedRole() =
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            viewModel.handleIntent(
+                MainIntent.UpdateRole(
+                    guildId = 1L,
+                    roleId = 2L,
+                    name = "Lead Moderator",
+                    permissions = PermissionFlags.MANAGE_CHANNELS or PermissionFlags.MANAGE_MESSAGES,
+                ),
+            )
+
+            val state = viewModel.uiState.value
+            val updated = state.roles.first { it.id == 2L }
+            assertEquals("Lead Moderator", updated.name)
+            assertEquals(updated, state.selectedRoleForEdit)
+        }
+
+    @Test
+    fun deleteRole_success_removesRoleFromList() =
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            viewModel.handleIntent(MainIntent.DeleteRole(guildId = 1L, roleId = 2L))
+
+            val state = viewModel.uiState.value
+            assertEquals(1, state.roles.size)
+            assertEquals("@everyone", state.roles.first().name)
+            assertNull(state.roleActionError)
+        }
+
+    // --- Channel Overwrites & Settings Tests ---
+
+    @Test
+    fun showChannelSettingsDialog_loadsOverwritesForChannel() =
+        runTest {
+            val fakeOverwriteRepo =
+                FakeChannelOverwriteRepository(
+                    shouldSucceed = true,
+                    mockOverwrites =
+                        mutableListOf(
+                            ChannelOverwrite(
+                                id = 1L,
+                                channelId = 101L,
+                                targetType = OverwriteTargetType.ROLE,
+                                targetId = 1L,
+                                allow = PermissionFlags.VIEW_CHANNEL,
+                                deny = PermissionFlags.SEND_MESSAGES,
+                            ),
+                        ),
+                )
+            val viewModel = createViewModel(fakeChannelOverwriteRepo = fakeOverwriteRepo)
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            val channel = Channel(id = 101L, name = "general")
+            viewModel.handleIntent(MainIntent.ShowChannelSettingsDialog(show = true, channel = channel))
+
+            val state = viewModel.uiState.value
+            assertTrue(state.showChannelSettingsDialog)
+            assertEquals(channel, state.selectedChannelForEdit)
+            assertEquals(1, state.channelOverwrites.size)
+            assertEquals(1L, state.channelOverwrites.first().id)
+        }
+
+    @Test
+    fun setChannelOverwrite_success_updatesOverwritesList() =
+        runTest {
+            val viewModel = createViewModel()
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            viewModel.handleIntent(
+                MainIntent.SetChannelOverwrite(
+                    channelId = 101L,
+                    targetType = OverwriteTargetType.ROLE,
+                    targetId = 2L,
+                    allow = PermissionFlags.VIEW_CHANNEL or PermissionFlags.SEND_MESSAGES,
+                    deny = 0L,
+                ),
+            )
+
+            val state = viewModel.uiState.value
+            val ow = state.channelOverwrites.find { it.channelId == 101L && it.targetId == 2L }
+            assertTrue(ow != null)
+            assertEquals(PermissionFlags.VIEW_CHANNEL or PermissionFlags.SEND_MESSAGES, ow.allow)
+        }
+
+    @Test
+    fun deleteChannelOverwrite_success_removesFromOverwritesList() =
+        runTest {
+            val fakeOverwriteRepo =
+                FakeChannelOverwriteRepository(
+                    shouldSucceed = true,
+                    mockOverwrites =
+                        mutableListOf(
+                            ChannelOverwrite(
+                                id = 1L,
+                                channelId = 101L,
+                                targetType = OverwriteTargetType.ROLE,
+                                targetId = 1L,
+                                allow = 0L,
+                                deny = 32L,
+                            ),
+                        ),
+                )
+            val viewModel = createViewModel(fakeChannelOverwriteRepo = fakeOverwriteRepo)
+            viewModel.handleIntent(MainIntent.LoadInitialData(userId = 1L))
+
+            viewModel.handleIntent(
+                MainIntent.DeleteChannelOverwrite(
+                    channelId = 101L,
+                    targetType = OverwriteTargetType.ROLE,
+                    targetId = 1L,
+                ),
+            )
+
+            val state = viewModel.uiState.value
+            assertTrue(state.channelOverwrites.isEmpty())
         }
 }

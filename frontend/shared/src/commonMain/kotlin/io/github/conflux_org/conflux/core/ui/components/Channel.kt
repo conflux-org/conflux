@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,6 +49,7 @@ enum class ChannelStatus {
  * @param name 頻道名稱 (例如 "general", "welcome")
  * @param status 頻道狀態 (Idle, Hover, Selected, Unread)
  * @param modifier 外部 Modifier
+ * @param onSettingsClick 點擊頻道設定時的回調 (若有 MANAGE_CHANNELS 權限)
  * @param onClick 點擊頻道時的回調函式
  */
 @Composable
@@ -54,6 +57,7 @@ fun TextChannelItem(
     name: String,
     status: ChannelStatus = ChannelStatus.Idle,
     modifier: Modifier = Modifier,
+    onSettingsClick: (() -> Unit)? = null,
     onClick: () -> Unit = {},
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -138,6 +142,20 @@ fun TextChannelItem(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+
+        if (onSettingsClick != null && (effectiveStatus == ChannelStatus.Hover || effectiveStatus == ChannelStatus.Selected)) {
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.size(20.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Settings,
+                    contentDescription = "頻道設定",
+                    tint = iconColor,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
     }
 }
 
