@@ -20,8 +20,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import io.github.conflux_org.conflux.domain.model.Channel
 import io.github.conflux_org.conflux.domain.model.ChannelOverwrite
 import io.github.conflux_org.conflux.domain.model.OverwriteTargetType
@@ -58,22 +61,22 @@ private val CHANNEL_PERMISSIONS =
     listOf(
         ChannelPermissionItem(
             flag = PermissionFlags.VIEW_CHANNEL,
-            title = "檢視頻道 (View Channel)",
+            title = "檢視頻道",
             description = "允許或禁止該身分組/成員在此頻道中查看與讀取訊息。",
         ),
         ChannelPermissionItem(
             flag = PermissionFlags.SEND_MESSAGES,
-            title = "發送訊息 (Send Messages)",
+            title = "發送訊息",
             description = "允許或禁止該身分組/成員在此頻道中發送文字訊息。",
         ),
         ChannelPermissionItem(
             flag = PermissionFlags.MANAGE_CHANNELS,
-            title = "管理頻道 (Manage Channel)",
+            title = "管理頻道",
             description = "允許或禁止編輯此頻道設定與刪除此頻道。",
         ),
         ChannelPermissionItem(
             flag = PermissionFlags.MANAGE_MESSAGES,
-            title = "管理訊息 (Manage Messages)",
+            title = "管理訊息",
             description = "允許或禁止刪除其他人的訊息。",
         ),
     )
@@ -110,11 +113,15 @@ fun ChannelSettingsDialog(
         currentDeny = ow?.deny ?: 0L
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Box(
             modifier =
                 Modifier
-                    .size(width = 720.dp, height = 560.dp)
+                    .fillMaxWidth(0.8f)
+                    .fillMaxHeight(0.8f)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFF313338)),
         ) {
@@ -123,10 +130,10 @@ fun ChannelSettingsDialog(
                 Column(
                     modifier =
                         Modifier
-                            .width(220.dp)
+                            .width(260.dp)
                             .fillMaxHeight()
                             .background(Color(0xFF2B2D31))
-                            .padding(12.dp),
+                            .padding(16.dp),
                 ) {
                     Text(
                         text = "身分組 / 成員權限",
@@ -134,7 +141,7 @@ fun ChannelSettingsDialog(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -155,7 +162,7 @@ fun ChannelSettingsDialog(
                                         .clip(RoundedCornerShape(4.dp))
                                         .background(bg)
                                         .clickable { selectedRole = role }
-                                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                                        .padding(horizontal = 10.dp, vertical = 9.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
@@ -186,7 +193,7 @@ fun ChannelSettingsDialog(
                         Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .padding(20.dp),
+                            .padding(24.dp),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -197,10 +204,11 @@ fun ChannelSettingsDialog(
                             Text(
                                 text = "頻道設定 - #${channel.name}",
                                 color = Color(0xFFF2F3F5),
-                                fontSize = 18.sp,
+                                fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                             )
                             if (selectedRole != null) {
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "覆寫身分組：${selectedRole?.name}",
                                     color = Color(0xFF949BA4),
@@ -208,7 +216,7 @@ fun ChannelSettingsDialog(
                                 )
                             }
                         }
-                        IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                        IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
                                 contentDescription = "關閉",
@@ -217,11 +225,11 @@ fun ChannelSettingsDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     if (selectedRole == null) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("請選擇身分組以設定頻道覆寫", color = Color(0xFF949BA4))
+                            Text("請選擇身分組以設定頻道覆寫", color = Color(0xFF949BA4), fontSize = 15.sp)
                         }
                     } else {
                         Column(
@@ -244,22 +252,22 @@ fun ChannelSettingsDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                                         Text(
                                             text = item.title,
                                             color = Color(0xFFF2F3F5),
-                                            fontSize = 14.sp,
+                                            fontSize = 15.sp,
                                             fontWeight = FontWeight.Medium,
                                         )
-                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = item.description,
                                             color = Color(0xFF949BA4),
-                                            fontSize = 12.sp,
+                                            fontSize = 13.sp,
                                         )
                                     }
 
-                                    // 三態 Segmented Button 切換 (拒絕 ✕ / 繼承 ─ / 允許 ✓)
+                                    // 三態 Segmented Button 切換 (拒絕 ✕ / 繼承 ─ / 允許 ✓) 無文字純圖示
                                     Row(
                                         modifier =
                                             Modifier
@@ -267,66 +275,69 @@ fun ChannelSettingsDialog(
                                                 .background(Color(0xFF2B2D31))
                                                 .padding(2.dp),
                                     ) {
-                                        // 拒絕按鈕
+                                        // 拒絕按鈕 (✕)
                                         val isDeny = triState == TriStatePermission.DENY
                                         Box(
                                             modifier =
                                                 Modifier
+                                                    .size(width = 38.dp, height = 30.dp)
                                                     .clip(RoundedCornerShape(3.dp))
                                                     .background(if (isDeny) Color(0xFFDA373C) else Color.Transparent)
                                                     .clickable(enabled = canManageChannels) {
                                                         currentDeny = currentDeny or item.flag
                                                         currentAllow = currentAllow and item.flag.inv()
-                                                    }.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                    },
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            Text(
-                                                text = "✕ 拒絕",
-                                                color = if (isDeny) Color.White else Color(0xFF949BA4),
-                                                fontSize = 12.sp,
-                                                fontWeight = if (isDeny) FontWeight.Bold else FontWeight.Normal,
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription = "拒絕",
+                                                tint = if (isDeny) Color.White else Color(0xFF949BA4),
+                                                modifier = Modifier.size(18.dp),
                                             )
                                         }
 
-                                        // 繼承按鈕
+                                        // 繼承按鈕 (─)
                                         val isInherit = triState == TriStatePermission.INHERIT
                                         Box(
                                             modifier =
                                                 Modifier
+                                                    .size(width = 38.dp, height = 30.dp)
                                                     .clip(RoundedCornerShape(3.dp))
                                                     .background(if (isInherit) Color(0xFF4E5058) else Color.Transparent)
                                                     .clickable(enabled = canManageChannels) {
                                                         currentAllow = currentAllow and item.flag.inv()
                                                         currentDeny = currentDeny and item.flag.inv()
-                                                    }.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                    },
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            Text(
-                                                text = "─ 繼承",
-                                                color = if (isInherit) Color.White else Color(0xFF949BA4),
-                                                fontSize = 12.sp,
-                                                fontWeight = if (isInherit) FontWeight.Bold else FontWeight.Normal,
+                                            Icon(
+                                                imageVector = Icons.Rounded.Remove,
+                                                contentDescription = "繼承",
+                                                tint = if (isInherit) Color.White else Color(0xFF949BA4),
+                                                modifier = Modifier.size(18.dp),
                                             )
                                         }
 
-                                        // 允許按鈕
+                                        // 允許按鈕 (✓)
                                         val isAllow = triState == TriStatePermission.ALLOW
                                         Box(
                                             modifier =
                                                 Modifier
+                                                    .size(width = 38.dp, height = 30.dp)
                                                     .clip(RoundedCornerShape(3.dp))
                                                     .background(if (isAllow) Color(0xFF23A55A) else Color.Transparent)
                                                     .clickable(enabled = canManageChannels) {
                                                         currentAllow = currentAllow or item.flag
                                                         currentDeny = currentDeny and item.flag.inv()
-                                                    }.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                    },
                                             contentAlignment = Alignment.Center,
                                         ) {
-                                            Text(
-                                                text = "✓ 允許",
-                                                color = if (isAllow) Color.White else Color(0xFF949BA4),
-                                                fontSize = 12.sp,
-                                                fontWeight = if (isAllow) FontWeight.Bold else FontWeight.Normal,
+                                            Icon(
+                                                imageVector = Icons.Rounded.Check,
+                                                contentDescription = "允許",
+                                                tint = if (isAllow) Color.White else Color(0xFF949BA4),
+                                                modifier = Modifier.size(18.dp),
                                             )
                                         }
                                     }
@@ -334,7 +345,7 @@ fun ChannelSettingsDialog(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         if (errorMessage != null) {
                             Text(
@@ -373,7 +384,7 @@ fun ChannelSettingsDialog(
                                         contentDescription = "刪除覆寫",
                                         modifier = Modifier.size(16.dp),
                                     )
-                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text("重置此覆寫", fontSize = 13.sp)
                                 }
                             } else {
@@ -387,7 +398,7 @@ fun ChannelSettingsDialog(
                                 ) {
                                     Text("取消", color = Color(0xFF949BA4), fontSize = 13.sp)
                                 }
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Button(
                                     onClick = {
                                         selectedRole?.let { role ->

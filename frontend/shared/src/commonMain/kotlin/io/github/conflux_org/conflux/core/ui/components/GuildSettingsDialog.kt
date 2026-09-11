@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import io.github.conflux_org.conflux.domain.model.PermissionFlags
 import io.github.conflux_org.conflux.domain.model.Role
 
@@ -62,37 +64,37 @@ private val ALL_PERMISSIONS_LIST =
     listOf(
         PermissionItem(
             PermissionFlags.ADMINISTRATOR,
-            "管理員 (Administrator)",
+            "管理員",
             "成員將擁有伺服器所有權限，並可無視頻道特定的限制與覆寫。",
         ),
         PermissionItem(
             PermissionFlags.MANAGE_GUILD,
-            "管理伺服器 (Manage Server)",
+            "管理伺服器",
             "允許成員編輯伺服器名稱、查看管理資訊。",
         ),
         PermissionItem(
             PermissionFlags.MANAGE_ROLES,
-            "管理身分組 (Manage Roles)",
+            "管理身分組",
             "允許成員建立、修改與刪除伺服器身分組。",
         ),
         PermissionItem(
             PermissionFlags.MANAGE_CHANNELS,
-            "管理頻道 (Manage Channels)",
+            "管理頻道",
             "允許成員建立、編輯或刪除文字與語音頻道。",
         ),
         PermissionItem(
             PermissionFlags.VIEW_CHANNEL,
-            "檢視頻道 (View Channel)",
+            "檢視頻道",
             "允許成員預設查看伺服器頻道。若未勾選，將無法查看任何內容。",
         ),
         PermissionItem(
             PermissionFlags.SEND_MESSAGES,
-            "發送訊息 (Send Messages)",
+            "發送訊息",
             "允許成員在文字頻道中發送訊息。",
         ),
         PermissionItem(
             PermissionFlags.MANAGE_MESSAGES,
-            "管理訊息 (Manage Messages)",
+            "管理訊息",
             "允許成員刪除或置頂其他成員發送的訊息。",
         ),
     )
@@ -120,11 +122,15 @@ fun GuildSettingsDialog(
         editingPermissions = selectedRole?.permissions ?: 0L
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Box(
             modifier =
                 Modifier
-                    .size(width = 720.dp, height = 560.dp)
+                    .fillMaxWidth(0.8f)
+                    .fillMaxHeight(0.8f)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFF313338)),
         ) {
@@ -133,50 +139,59 @@ fun GuildSettingsDialog(
                 Column(
                     modifier =
                         Modifier
-                            .width(220.dp)
+                            .width(260.dp)
                             .fillMaxHeight()
                             .background(Color(0xFF2B2D31))
-                            .padding(12.dp),
+                            .padding(16.dp),
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "身分組",
-                            color = Color(0xFF949BA4),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        if (canManageRoles) {
-                            IconButton(
-                                onClick = { showNewRolePrompt = true },
-                                modifier = Modifier.size(24.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Add,
-                                    contentDescription = "新增身分組",
-                                    tint = Color(0xFFDBDEE1),
-                                )
-                            }
-                        }
-                    }
+                    Text(
+                        text = "身分組",
+                        color = Color(0xFF949BA4),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (canManageRoles && !showNewRolePrompt) {
+                        Button(
+                            onClick = { showNewRolePrompt = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5865F2)),
+                            modifier = Modifier.fillMaxWidth().height(36.dp),
+                            shape = RoundedCornerShape(4.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "新增身分組",
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
 
                     if (showNewRolePrompt) {
                         Column(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .background(Color(0xFF1E1F22), RoundedCornerShape(4.dp))
-                                    .padding(8.dp),
+                                    .background(Color(0xFF1E1F22), RoundedCornerShape(6.dp))
+                                    .padding(10.dp),
                         ) {
                             OutlinedTextField(
                                 value = newRoleName,
                                 onValueChange = { newRoleName = it },
-                                placeholder = { Text("身分組名稱", fontSize = 12.sp) },
+                                placeholder = { Text("身分組名稱", fontSize = 13.sp) },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth(),
                                 colors =
@@ -187,10 +202,11 @@ fun GuildSettingsDialog(
                                         unfocusedBorderColor = Color(0xFF4E5058),
                                     ),
                             )
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Button(
                                     onClick = {
@@ -198,11 +214,12 @@ fun GuildSettingsDialog(
                                         newRoleName = ""
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                                    modifier = Modifier.height(28.dp),
+                                    modifier = Modifier.height(32.dp),
+                                    contentPadding = PaddingValues(horizontal = 10.dp),
                                 ) {
-                                    Text("取消", fontSize = 11.sp, color = Color(0xFF949BA4))
+                                    Text("取消", fontSize = 12.sp, color = Color(0xFF949BA4))
                                 }
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Button(
                                     onClick = {
                                         if (newRoleName.isNotBlank()) {
@@ -212,13 +229,15 @@ fun GuildSettingsDialog(
                                         }
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5865F2)),
-                                    modifier = Modifier.height(28.dp),
+                                    modifier = Modifier.height(32.dp),
+                                    contentPadding = PaddingValues(horizontal = 14.dp),
+                                    shape = RoundedCornerShape(4.dp),
                                 ) {
-                                    Text("建立", fontSize = 11.sp, color = Color.White)
+                                    Text("建立身分組", fontSize = 12.sp, color = Color.White, maxLines = 1)
                                 }
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
 
                     LazyColumn(
@@ -237,7 +256,7 @@ fun GuildSettingsDialog(
                                         .clip(RoundedCornerShape(4.dp))
                                         .background(bg)
                                         .clickable { onSelectRole(role) }
-                                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                                        .padding(horizontal = 10.dp, vertical = 9.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
@@ -253,7 +272,7 @@ fun GuildSettingsDialog(
                                     Text(
                                         text = "預設",
                                         color = Color(0xFF80848E),
-                                        fontSize = 10.sp,
+                                        fontSize = 11.sp,
                                     )
                                 }
                             }
@@ -267,9 +286,9 @@ fun GuildSettingsDialog(
                         Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .padding(20.dp),
+                            .padding(24.dp),
                 ) {
-                    // 頂部關閉按鈕
+                    // 頂部標題與關閉按鈕
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -278,10 +297,10 @@ fun GuildSettingsDialog(
                         Text(
                             text = if (selectedRole != null) "編輯身分組 - ${selectedRole.name}" else "伺服器身分組設定",
                             color = Color(0xFFF2F3F5),
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                         )
-                        IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                        IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
                                 contentDescription = "關閉",
@@ -290,14 +309,14 @@ fun GuildSettingsDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     if (selectedRole == null) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("請選擇或新增一個身分組以編輯權限", color = Color(0xFF949BA4))
+                            Text("請選擇或新增一個身分組以編輯權限", color = Color(0xFF949BA4), fontSize = 15.sp)
                         }
                     } else {
                         // 內容滾動區
@@ -308,8 +327,8 @@ fun GuildSettingsDialog(
                                     .verticalScroll(rememberScrollState()),
                         ) {
                             // 身分組名稱
-                            Text("身分組名稱", color = Color(0xFFB5BAC1), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("身分組名稱", color = Color(0xFFB5BAC1), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = editingName,
                                 onValueChange = { editingName = it },
@@ -334,12 +353,12 @@ fun GuildSettingsDialog(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(20.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
                             HorizontalDivider(color = Color(0xFF3F4147))
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
 
-                            Text("權限設定", color = Color(0xFFB5BAC1), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Text("權限設定", color = Color(0xFFB5BAC1), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             ALL_PERMISSIONS_LIST.forEach { item ->
                                 val isChecked = (editingPermissions and item.flag) == item.flag
@@ -347,22 +366,22 @@ fun GuildSettingsDialog(
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 8.dp),
+                                            .padding(vertical = 10.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                                    Column(modifier = Modifier.weight(1f).padding(end = 20.dp)) {
                                         Text(
                                             text = item.title,
                                             color = Color(0xFFF2F3F5),
-                                            fontSize = 14.sp,
+                                            fontSize = 15.sp,
                                             fontWeight = FontWeight.Medium,
                                         )
-                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Spacer(modifier = Modifier.height(4.dp))
                                         Text(
                                             text = item.description,
                                             color = Color(0xFF949BA4),
-                                            fontSize = 12.sp,
+                                            fontSize = 13.sp,
                                         )
                                     }
                                     Switch(
@@ -388,7 +407,7 @@ fun GuildSettingsDialog(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         if (errorMessage != null) {
                             Text(
@@ -420,7 +439,7 @@ fun GuildSettingsDialog(
                                         contentDescription = "刪除",
                                         modifier = Modifier.size(16.dp),
                                     )
-                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text("刪除身分組", fontSize = 13.sp)
                                 }
                             } else {
@@ -434,7 +453,7 @@ fun GuildSettingsDialog(
                                 ) {
                                     Text("取消", color = Color(0xFF949BA4), fontSize = 13.sp)
                                 }
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Button(
                                     onClick = {
                                         onUpdateRole(selectedRole.id, editingName, editingPermissions)
