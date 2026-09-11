@@ -157,6 +157,7 @@ fun GuildSettingsDialog(
                         Button(
                             onClick = { showNewRolePrompt = true },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5865F2)),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                             modifier = Modifier.fillMaxWidth().height(36.dp),
                             shape = RoundedCornerShape(4.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
@@ -214,6 +215,8 @@ fun GuildSettingsDialog(
                                         newRoleName = ""
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                    shape = RoundedCornerShape(4.dp),
                                     modifier = Modifier.height(32.dp),
                                     contentPadding = PaddingValues(horizontal = 10.dp),
                                 ) {
@@ -229,6 +232,7 @@ fun GuildSettingsDialog(
                                         }
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5865F2)),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     modifier = Modifier.height(32.dp),
                                     contentPadding = PaddingValues(horizontal = 14.dp),
                                     shape = RoundedCornerShape(4.dp),
@@ -432,6 +436,7 @@ fun GuildSettingsDialog(
                                             containerColor = Color(0xFFDA373C),
                                             contentColor = Color.White,
                                         ),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(4.dp),
                                 ) {
                                     Icon(
@@ -450,6 +455,8 @@ fun GuildSettingsDialog(
                                 Button(
                                     onClick = onDismiss,
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                    shape = RoundedCornerShape(4.dp),
                                 ) {
                                     Text("取消", color = Color(0xFF949BA4), fontSize = 13.sp)
                                 }
@@ -464,6 +471,7 @@ fun GuildSettingsDialog(
                                             containerColor = Color(0xFF5865F2),
                                             contentColor = Color.White,
                                         ),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(4.dp),
                                 ) {
                                     if (isSaving) {

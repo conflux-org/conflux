@@ -377,6 +377,7 @@ fun ChannelSettingsDialog(
                                             containerColor = Color(0xFFDA373C),
                                             contentColor = Color.White,
                                         ),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(4.dp),
                                 ) {
                                     Icon(
@@ -395,6 +396,8 @@ fun ChannelSettingsDialog(
                                 Button(
                                     onClick = onDismiss,
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                    shape = RoundedCornerShape(4.dp),
                                 ) {
                                     Text("取消", color = Color(0xFF949BA4), fontSize = 13.sp)
                                 }
@@ -416,6 +419,7 @@ fun ChannelSettingsDialog(
                                             containerColor = Color(0xFF5865F2),
                                             contentColor = Color.White,
                                         ),
+                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(4.dp),
                                 ) {
                                     if (isSaving) {
