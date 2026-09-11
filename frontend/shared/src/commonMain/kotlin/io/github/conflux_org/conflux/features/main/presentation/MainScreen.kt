@@ -71,6 +71,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                                 avatarColor = Color(0xFFE91E63),
                                 status = UserStatus.Online,
                                 customStatus = "Coding KMP UI",
+                                roleIds = listOf(2L),
                             ),
                             MemberData(
                                 id = "m2",
@@ -78,6 +79,7 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                                 avatarColor = Color(0xFF5865F2),
                                 status = UserStatus.Online,
                                 isBot = true,
+                                roleIds = listOf(2L),
                             ),
                         ),
                 ),
@@ -115,6 +117,8 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
                 ),
             )
         }
+
+    val allMembers = remember(sampleCategories) { sampleCategories.flatMap { it.members }.distinctBy { it.id } }
 
     Row(
         modifier =
@@ -333,6 +337,8 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             isSaving = uiState.isSavingRole,
             errorMessage = uiState.roleActionError,
             canManageRoles = uiState.canManageRoles,
+            members = allMembers,
+            memberRoles = uiState.memberRoles,
             onSelectRole = { role -> viewModel.handleIntent(MainIntent.SelectRoleForEdit(role)) },
             onCreateRole = { name ->
                 uiState.selectedGuild?.let { guild ->
@@ -349,6 +355,28 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
             onDeleteRole = { roleId ->
                 uiState.selectedGuild?.let { guild ->
                     viewModel.handleIntent(MainIntent.DeleteRole(guild.id, roleId))
+                }
+            },
+            onAssignMemberRole = { userId, roleId ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(
+                        MainIntent.AssignMemberRole(
+                            guildId = guild.id,
+                            userId = userId,
+                            roleId = roleId,
+                        ),
+                    )
+                }
+            },
+            onRemoveMemberRole = { userId, roleId ->
+                uiState.selectedGuild?.let { guild ->
+                    viewModel.handleIntent(
+                        MainIntent.RemoveMemberRole(
+                            guildId = guild.id,
+                            userId = userId,
+                            roleId = roleId,
+                        ),
+                    )
                 }
             },
             onDismiss = { viewModel.handleIntent(MainIntent.ShowGuildSettingsDialog(false)) },
@@ -382,7 +410,10 @@ fun MainScreen(viewModel: MainViewModel = koinViewModel()) {
     // 成員身分組管理對話框
     if (uiState.showMemberRolesDialog && uiState.selectedMemberForRoles != null) {
         val member = uiState.selectedMemberForRoles!!
-        val currentRoleIds = uiState.memberRoles[member.id] ?: member.roleIds
+        val currentRoleIds =
+            uiState.memberRoles[member.id]
+                ?: uiState.memberRoles[member.id.removePrefix("m")]
+                ?: member.roleIds
         MemberRolesDialog(
             member = member,
             roles = uiState.roles,

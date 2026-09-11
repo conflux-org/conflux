@@ -27,6 +27,8 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,48 +56,59 @@ import androidx.compose.ui.window.DialogProperties
 import io.github.conflux_org.conflux.domain.model.PermissionFlags
 import io.github.conflux_org.conflux.domain.model.Role
 
-private data class PermissionItem(
+/**
+ * 伺服器身分組設定標籤頁
+ */
+private enum class RoleSettingsTab {
+    Permissions,
+    Members,
+}
+
+/**
+ * 權限顯示項目模型
+ */
+data class PermissionItem(
     val flag: Long,
     val title: String,
     val description: String,
 )
 
-private val ALL_PERMISSIONS_LIST =
+val ALL_PERMISSIONS_LIST =
     listOf(
         PermissionItem(
-            PermissionFlags.ADMINISTRATOR,
-            "管理員",
-            "成員將擁有伺服器所有權限，並可無視頻道特定的限制與覆寫。",
+            flag = PermissionFlags.ADMINISTRATOR,
+            title = "管理員",
+            description = "擁有伺服器的所有權限，並可繞過頻道專用權限。此權限具有最高危害性。",
         ),
         PermissionItem(
-            PermissionFlags.MANAGE_GUILD,
-            "管理伺服器",
-            "允許成員編輯伺服器名稱、查看管理資訊。",
+            flag = PermissionFlags.MANAGE_GUILD,
+            title = "管理伺服器",
+            description = "允許成員變更伺服器名稱與設定。",
         ),
         PermissionItem(
-            PermissionFlags.MANAGE_ROLES,
-            "管理身分組",
-            "允許成員建立、修改與刪除伺服器身分組。",
+            flag = PermissionFlags.MANAGE_ROLES,
+            title = "管理身分組",
+            description = "允許成員建立新身分組並編輯低於此身分組的權限。",
         ),
         PermissionItem(
-            PermissionFlags.MANAGE_CHANNELS,
-            "管理頻道",
-            "允許成員建立、編輯或刪除文字與語音頻道。",
+            flag = PermissionFlags.MANAGE_CHANNELS,
+            title = "管理頻道",
+            description = "允許成員建立、編輯或刪除頻道。",
         ),
         PermissionItem(
-            PermissionFlags.VIEW_CHANNEL,
-            "檢視頻道",
-            "允許成員預設查看伺服器頻道。若未勾選，將無法查看任何內容。",
+            flag = PermissionFlags.VIEW_CHANNEL,
+            title = "檢視頻道",
+            description = "允許成員讀取文字頻道訊息。",
         ),
         PermissionItem(
-            PermissionFlags.SEND_MESSAGES,
-            "發送訊息",
-            "允許成員在文字頻道中發送訊息。",
+            flag = PermissionFlags.SEND_MESSAGES,
+            title = "發送訊息",
+            description = "允許成員在文字頻道發送訊息。",
         ),
         PermissionItem(
-            PermissionFlags.MANAGE_MESSAGES,
-            "管理訊息",
-            "允許成員刪除或置頂其他成員發送的訊息。",
+            flag = PermissionFlags.MANAGE_MESSAGES,
+            title = "管理訊息",
+            description = "允許成員刪除其他成員發布的訊息或置頂訊息。",
         ),
     )
 
@@ -106,21 +119,59 @@ fun GuildSettingsDialog(
     isSaving: Boolean,
     errorMessage: String?,
     canManageRoles: Boolean = true,
+    members: List<MemberData> = emptyList(),
+    memberRoles: Map<String, List<Long>> = emptyMap(),
     onSelectRole: (Role) -> Unit,
     onCreateRole: (name: String) -> Unit,
     onUpdateRole: (roleId: Long, name: String, permissions: Long) -> Unit,
     onDeleteRole: (roleId: Long) -> Unit,
+    onAssignMemberRole: (userId: Long, roleId: Long) -> Unit = { _, _ -> },
+    onRemoveMemberRole: (userId: Long, roleId: Long) -> Unit = { _, _ -> },
     onDismiss: () -> Unit,
 ) {
     var editingName by remember(selectedRole) { mutableStateOf(selectedRole?.name ?: "") }
     var editingPermissions by remember(selectedRole) { mutableStateOf(selectedRole?.permissions ?: 0L) }
+    var selectedTab by remember(selectedRole) { mutableStateOf(RoleSettingsTab.Permissions) }
     var showNewRolePrompt by remember { mutableStateOf(false) }
     var newRoleName by remember { mutableStateOf("") }
+    var showAddMemberDropdown by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedRole) {
         editingName = selectedRole?.name ?: ""
         editingPermissions = selectedRole?.permissions ?: 0L
     }
+
+    val roleMembers =
+        remember(selectedRole, members, memberRoles) {
+            if (selectedRole == null) {
+                emptyList()
+            } else if (selectedRole.isEveryone) {
+                members
+            } else {
+                members.filter { member ->
+                    val assigned =
+                        memberRoles[member.id]
+                            ?: memberRoles[member.id.removePrefix("m")]
+                            ?: member.roleIds
+                    selectedRole.id in assigned
+                }
+            }
+        }
+
+    val availableMembers =
+        remember(selectedRole, members, memberRoles) {
+            if (selectedRole == null || selectedRole.isEveryone) {
+                emptyList()
+            } else {
+                members.filter { member ->
+                    val assigned =
+                        memberRoles[member.id]
+                            ?: memberRoles[member.id.removePrefix("m")]
+                            ?: member.roleIds
+                    selectedRole.id !in assigned
+                }
+            }
+        }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -320,168 +371,460 @@ fun GuildSettingsDialog(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("請選擇或新增一個身分組以編輯權限", color = Color(0xFF949BA4), fontSize = 15.sp)
+                            Text("請選擇或新增一個身分組以編輯權限與成員", color = Color(0xFF949BA4), fontSize = 15.sp)
                         }
                     } else {
-                        // 內容滾動區
-                        Column(
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .verticalScroll(rememberScrollState()),
+                        // 標籤頁切換列 (權限 / 管理成員)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            // 身分組名稱
-                            Text("身分組名稱", color = Color(0xFFB5BAC1), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedTextField(
-                                value = editingName,
-                                onValueChange = { editingName = it },
-                                enabled = canManageRoles && !selectedRole.isEveryone,
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
+                            Button(
+                                onClick = { selectedTab = RoleSettingsTab.Permissions },
                                 colors =
-                                    OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color(0xFFF2F3F5),
-                                        unfocusedTextColor = Color(0xFFDBDEE1),
-                                        disabledTextColor = Color(0xFF80848E),
-                                        focusedBorderColor = Color(0xFF5865F2),
-                                        unfocusedBorderColor = Color(0xFF4E5058),
+                                    ButtonDefaults.buttonColors(
+                                        containerColor =
+                                            if (selectedTab == RoleSettingsTab.Permissions) {
+                                                Color(0xFF404249)
+                                            } else {
+                                                Color.Transparent
+                                            },
                                     ),
-                            )
-                            if (selectedRole.isEveryone) {
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                shape = RoundedCornerShape(4.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                modifier = Modifier.height(32.dp),
+                            ) {
                                 Text(
-                                    text = "@everyone 為系統預設身分組，無法修改名稱",
-                                    color = Color(0xFF80848E),
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(top = 4.dp),
+                                    text = "權限",
+                                    color =
+                                        if (selectedTab == RoleSettingsTab.Permissions) {
+                                            Color(0xFFF2F3F5)
+                                        } else {
+                                            Color(0xFF949BA4)
+                                        },
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(24.dp))
-                            HorizontalDivider(color = Color(0xFF3F4147))
-                            Spacer(modifier = Modifier.height(20.dp))
+                            Button(
+                                onClick = { selectedTab = RoleSettingsTab.Members },
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor =
+                                            if (selectedTab == RoleSettingsTab.Members) {
+                                                Color(0xFF404249)
+                                            } else {
+                                                Color.Transparent
+                                            },
+                                    ),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                shape = RoundedCornerShape(4.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                modifier = Modifier.height(32.dp),
+                            ) {
+                                Text(
+                                    text = "管理成員",
+                                    color =
+                                        if (selectedTab == RoleSettingsTab.Members) {
+                                            Color(0xFFF2F3F5)
+                                        } else {
+                                            Color(0xFF949BA4)
+                                        },
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                        }
 
-                            Text("權限設定", color = Color(0xFFB5BAC1), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(12.dp))
+                        // 依標籤切換顯示區塊
+                        if (selectedTab == RoleSettingsTab.Permissions) {
+                            // 權限設定滾動區
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .verticalScroll(rememberScrollState()),
+                            ) {
+                                // 身分組名稱
+                                Text("身分組名稱", color = Color(0xFFB5BAC1), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedTextField(
+                                    value = editingName,
+                                    onValueChange = { editingName = it },
+                                    enabled = canManageRoles && !selectedRole.isEveryone,
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors =
+                                        OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color(0xFFF2F3F5),
+                                            unfocusedTextColor = Color(0xFFDBDEE1),
+                                            disabledTextColor = Color(0xFF80848E),
+                                            focusedBorderColor = Color(0xFF5865F2),
+                                            unfocusedBorderColor = Color(0xFF4E5058),
+                                        ),
+                                )
+                                if (selectedRole.isEveryone) {
+                                    Text(
+                                        text = "@everyone 為系統預設身分組，無法修改名稱",
+                                        color = Color(0xFF80848E),
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                }
 
-                            ALL_PERMISSIONS_LIST.forEach { item ->
-                                val isChecked = (editingPermissions and item.flag) == item.flag
-                                Row(
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 10.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Column(modifier = Modifier.weight(1f).padding(end = 20.dp)) {
-                                        Text(
-                                            text = item.title,
-                                            color = Color(0xFFF2F3F5),
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Medium,
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = item.description,
-                                            color = Color(0xFF949BA4),
-                                            fontSize = 13.sp,
+                                Spacer(modifier = Modifier.height(24.dp))
+                                HorizontalDivider(color = Color(0xFF3F4147))
+                                Spacer(modifier = Modifier.height(20.dp))
+
+                                Text("權限設定", color = Color(0xFFB5BAC1), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                ALL_PERMISSIONS_LIST.forEach { item ->
+                                    val isChecked = (editingPermissions and item.flag) == item.flag
+                                    Row(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 10.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f).padding(end = 20.dp)) {
+                                            Text(
+                                                text = item.title,
+                                                color = Color(0xFFF2F3F5),
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Medium,
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = item.description,
+                                                color = Color(0xFF949BA4),
+                                                fontSize = 13.sp,
+                                            )
+                                        }
+                                        Switch(
+                                            checked = isChecked,
+                                            enabled = canManageRoles,
+                                            onCheckedChange = { checked ->
+                                                editingPermissions =
+                                                    if (checked) {
+                                                        editingPermissions or item.flag
+                                                    } else {
+                                                        editingPermissions and item.flag.inv()
+                                                    }
+                                            },
+                                            colors =
+                                                SwitchDefaults.colors(
+                                                    checkedThumbColor = Color.White,
+                                                    checkedTrackColor = Color(0xFF23A55A),
+                                                    uncheckedThumbColor = Color(0xFF80848E),
+                                                    uncheckedTrackColor = Color(0xFF4E5058),
+                                                ),
                                         )
                                     }
-                                    Switch(
-                                        checked = isChecked,
-                                        enabled = canManageRoles,
-                                        onCheckedChange = { checked ->
-                                            editingPermissions =
-                                                if (checked) {
-                                                    editingPermissions or item.flag
-                                                } else {
-                                                    editingPermissions and item.flag.inv()
-                                                }
-                                        },
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            if (errorMessage != null) {
+                                Text(
+                                    text = errorMessage,
+                                    color = Color(0xFFFA777C),
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                )
+                            }
+
+                            // 底部操作按鈕列
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (canManageRoles && !selectedRole.isEveryone) {
+                                    Button(
+                                        onClick = { onDeleteRole(selectedRole.id) },
                                         colors =
-                                            SwitchDefaults.colors(
-                                                checkedThumbColor = Color.White,
-                                                checkedTrackColor = Color(0xFF23A55A),
-                                                uncheckedThumbColor = Color(0xFF80848E),
-                                                uncheckedTrackColor = Color(0xFF4E5058),
+                                            ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFFDA373C),
+                                                contentColor = Color.White,
                                             ),
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        if (errorMessage != null) {
-                            Text(
-                                text = errorMessage,
-                                color = Color(0xFFFA777C),
-                                fontSize = 13.sp,
-                                modifier = Modifier.padding(bottom = 8.dp),
-                            )
-                        }
-
-                        // 底部操作按鈕列
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (canManageRoles && !selectedRole.isEveryone) {
-                                Button(
-                                    onClick = { onDeleteRole(selectedRole.id) },
-                                    colors =
-                                        ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFFDA373C),
-                                            contentColor = Color.White,
-                                        ),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = RoundedCornerShape(4.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Delete,
-                                        contentDescription = "刪除",
-                                        modifier = Modifier.size(16.dp),
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("刪除身分組", fontSize = 13.sp)
-                                }
-                            } else {
-                                Spacer(modifier = Modifier.width(1.dp))
-                            }
-
-                            Row {
-                                Button(
-                                    onClick = onDismiss,
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = RoundedCornerShape(4.dp),
-                                ) {
-                                    Text("取消", color = Color(0xFF949BA4), fontSize = 13.sp)
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Button(
-                                    onClick = {
-                                        onUpdateRole(selectedRole.id, editingName, editingPermissions)
-                                    },
-                                    enabled = canManageRoles && !isSaving,
-                                    colors =
-                                        ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF5865F2),
-                                            contentColor = Color.White,
-                                        ),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                                    shape = RoundedCornerShape(4.dp),
-                                ) {
-                                    if (isSaving) {
-                                        CircularProgressIndicator(
-                                            color = Color.White,
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                        shape = RoundedCornerShape(4.dp),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Delete,
+                                            contentDescription = "刪除",
                                             modifier = Modifier.size(16.dp),
-                                            strokeWidth = 2.dp,
                                         )
-                                    } else {
-                                        Text("儲存變更", fontSize = 13.sp)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("刪除身分組", fontSize = 13.sp)
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.width(1.dp))
+                                }
+
+                                Row {
+                                    Button(
+                                        onClick = onDismiss,
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                        shape = RoundedCornerShape(4.dp),
+                                    ) {
+                                        Text("取消", color = Color(0xFF949BA4), fontSize = 13.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Button(
+                                        onClick = {
+                                            onUpdateRole(selectedRole.id, editingName, editingPermissions)
+                                        },
+                                        enabled = canManageRoles && !isSaving,
+                                        colors =
+                                            ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF5865F2),
+                                                contentColor = Color.White,
+                                            ),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                        shape = RoundedCornerShape(4.dp),
+                                    ) {
+                                        if (isSaving) {
+                                            CircularProgressIndicator(
+                                                color = Color.White,
+                                                modifier = Modifier.size(16.dp),
+                                                strokeWidth = 2.dp,
+                                            )
+                                        } else {
+                                            Text("儲存變更", fontSize = 13.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // 管理成員標籤頁
+                            Column(modifier = Modifier.weight(1f)) {
+                                if (selectedRole.isEveryone) {
+                                    Text(
+                                        text = "@everyone 為伺服器預設身分組，所有成員均自動擁有此身分組，無需手動指派或移除。",
+                                        color = Color(0xFF949BA4),
+                                        fontSize = 13.sp,
+                                        modifier = Modifier.padding(bottom = 12.dp),
+                                    )
+                                } else {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = "擁有此身分組的成員 (${roleMembers.size})",
+                                            color = Color(0xFFB5BAC1),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+
+                                        if (canManageRoles) {
+                                            Box {
+                                                Button(
+                                                    onClick = { showAddMemberDropdown = true },
+                                                    colors =
+                                                        ButtonDefaults.buttonColors(
+                                                            containerColor = Color(0xFF5865F2),
+                                                        ),
+                                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    modifier = Modifier.height(32.dp),
+                                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Add,
+                                                        contentDescription = null,
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(16.dp),
+                                                    )
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Text(
+                                                        text = "新增成員",
+                                                        color = Color.White,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                    )
+                                                }
+
+                                                DropdownMenu(
+                                                    expanded = showAddMemberDropdown,
+                                                    onDismissRequest = { showAddMemberDropdown = false },
+                                                    modifier = Modifier.background(Color(0xFF2B2D31)),
+                                                ) {
+                                                    if (availableMembers.isEmpty()) {
+                                                        DropdownMenuItem(
+                                                            text = {
+                                                                Text(
+                                                                    text = "所有成員皆已擁有此身分組",
+                                                                    color = Color(0xFF949BA4),
+                                                                    fontSize = 13.sp,
+                                                                )
+                                                            },
+                                                            onClick = { showAddMemberDropdown = false },
+                                                        )
+                                                    } else {
+                                                        availableMembers.forEach { member ->
+                                                            DropdownMenuItem(
+                                                                text = {
+                                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                                        UserAvatar(
+                                                                            name = member.name,
+                                                                            size = 24.dp,
+                                                                            backgroundColor = member.avatarColor,
+                                                                            status = member.status,
+                                                                            statusBorderColor = Color(0xFF2B2D31),
+                                                                        )
+                                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                                        Text(
+                                                                            text = member.name,
+                                                                            color = Color(0xFFF2F3F5),
+                                                                            fontSize = 13.sp,
+                                                                        )
+                                                                    }
+                                                                },
+                                                                onClick = {
+                                                                    val uid =
+                                                                        member.id.removePrefix("m").toLongOrNull() ?: 1L
+                                                                    onAssignMemberRole(uid, selectedRole.id)
+                                                                    showAddMemberDropdown = false
+                                                                },
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (roleMembers.isEmpty()) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().weight(1f),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = "目前尚未有成員加入此身分組。可點擊右上角「新增成員」加入成員。",
+                                            color = Color(0xFF949BA4),
+                                            fontSize = 14.sp,
+                                        )
+                                    }
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxWidth().weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                    ) {
+                                        items(roleMembers, key = { it.id }) { member ->
+                                            Row(
+                                                modifier =
+                                                    Modifier
+                                                        .fillMaxWidth()
+                                                        .clip(RoundedCornerShape(4.dp))
+                                                        .background(Color(0xFF2B2D31))
+                                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                UserAvatar(
+                                                    name = member.name,
+                                                    size = 32.dp,
+                                                    backgroundColor = member.avatarColor,
+                                                    status = member.status,
+                                                    statusBorderColor = Color(0xFF2B2D31),
+                                                )
+                                                Spacer(modifier = Modifier.width(10.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Text(
+                                                            text = member.name,
+                                                            color = Color(0xFFF2F3F5),
+                                                            fontSize = 14.sp,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                        )
+                                                        if (member.isBot) {
+                                                            Spacer(modifier = Modifier.width(6.dp))
+                                                            Box(
+                                                                modifier =
+                                                                    Modifier
+                                                                        .clip(RoundedCornerShape(3.dp))
+                                                                        .background(Color(0xFF5865F2))
+                                                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                                            ) {
+                                                                Text(
+                                                                    text = "BOT",
+                                                                    color = Color.White,
+                                                                    fontSize = 9.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                    if (!member.customStatus.isNullOrBlank()) {
+                                                        Text(
+                                                            text = member.customStatus,
+                                                            color = Color(0xFF949BA4),
+                                                            fontSize = 12.sp,
+                                                        )
+                                                    }
+                                                }
+
+                                                if (canManageRoles && !selectedRole.isEveryone) {
+                                                    Button(
+                                                        onClick = {
+                                                            val uid = member.id.removePrefix("m").toLongOrNull() ?: 1L
+                                                            onRemoveMemberRole(uid, selectedRole.id)
+                                                        },
+                                                        colors =
+                                                            ButtonDefaults.buttonColors(
+                                                                containerColor = Color(0x26DA373C),
+                                                            ),
+                                                        elevation =
+                                                            ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                                        shape = RoundedCornerShape(4.dp),
+                                                        contentPadding =
+                                                            PaddingValues(
+                                                                horizontal = 10.dp,
+                                                                vertical = 4.dp,
+                                                            ),
+                                                        modifier = Modifier.height(28.dp),
+                                                    ) {
+                                                        Text(
+                                                            text = "移除",
+                                                            color = Color(0xFFFA777C),
+                                                            fontSize = 12.sp,
+                                                            fontWeight = FontWeight.Medium,
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End,
+                                ) {
+                                    Button(
+                                        onClick = onDismiss,
+                                        colors =
+                                            ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF5865F2),
+                                            ),
+                                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                                        shape = RoundedCornerShape(4.dp),
+                                        modifier = Modifier.height(34.dp),
+                                        contentPadding = PaddingValues(horizontal = 16.dp),
+                                    ) {
+                                        Text("完成", fontSize = 13.sp, color = Color.White)
                                     }
                                 }
                             }
