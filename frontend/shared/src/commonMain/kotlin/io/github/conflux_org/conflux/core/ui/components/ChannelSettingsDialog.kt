@@ -272,7 +272,19 @@ fun ChannelSettingsDialog(
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     modifier = Modifier.weight(1f),
                                 )
-                                if (hasOverwrite) {
+                                if (hasOverwrite && !role.isEveryone && canManageChannels) {
+                                    IconButton(
+                                        onClick = { onDeleteOverwrite(OverwriteTargetType.ROLE, role.id) },
+                                        modifier = Modifier.size(22.dp),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = "移除身分組權限",
+                                            tint = Color(0xFFDA373C),
+                                            modifier = Modifier.size(15.dp),
+                                        )
+                                    }
+                                } else if (hasOverwrite) {
                                     Box(
                                         modifier =
                                             Modifier
@@ -347,7 +359,19 @@ fun ChannelSettingsDialog(
                                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                         )
                                     }
-                                    if (hasOverwrite) {
+                                    if (hasOverwrite && canManageChannels) {
+                                        IconButton(
+                                            onClick = { onDeleteOverwrite(OverwriteTargetType.MEMBER, memberId) },
+                                            modifier = Modifier.size(22.dp),
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription = "移除成員權限",
+                                                tint = Color(0xFFDA373C),
+                                                modifier = Modifier.size(15.dp),
+                                            )
+                                        }
+                                    } else if (hasOverwrite) {
                                         Box(
                                             modifier =
                                                 Modifier
@@ -396,13 +420,6 @@ fun ChannelSettingsDialog(
                                     fontSize = 13.sp,
                                 )
                             }
-                        }
-                        IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = "關閉",
-                                tint = Color(0xFFB5BAC1),
-                            )
                         }
                     }
 
@@ -563,13 +580,22 @@ fun ChannelSettingsDialog(
                                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                                     shape = RoundedCornerShape(4.dp),
                                 ) {
+                                    val removeBtnText =
+                                        when (selectedTarget?.type) {
+                                            OverwriteTargetType.ROLE -> {
+                                                val isEveryone = roles.firstOrNull { it.id == selectedTarget?.id }?.isEveryone == true
+                                                if (isEveryone) "重置此覆寫" else "移除身分組權限"
+                                            }
+                                            OverwriteTargetType.MEMBER -> "移除成員權限"
+                                            null -> "移除權限"
+                                        }
                                     Icon(
                                         imageVector = Icons.Rounded.Delete,
-                                        contentDescription = "刪除覆寫",
+                                        contentDescription = removeBtnText,
                                         modifier = Modifier.size(16.dp),
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("重置此覆寫", fontSize = 13.sp)
+                                    Text(removeBtnText, fontSize = 13.sp)
                                 }
                             } else {
                                 Spacer(modifier = Modifier.width(1.dp))
@@ -626,21 +652,34 @@ fun ChannelSettingsDialog(
     // 搜尋與新增身分組或成員覆寫對話框
     if (showAddTargetDialog) {
         var targetSearchQuery by remember { mutableStateOf("") }
+        val configuredRoleIds =
+            remember(overwrites) {
+                overwrites.filter { it.targetType == OverwriteTargetType.ROLE }.map { it.targetId }.toSet()
+            }
         val matchingRoles =
-            remember(roles, targetSearchQuery) {
-                val nonEveryone = roles.filter { !it.isEveryone }
+            remember(roles, configuredRoleIds, targetSearchQuery) {
+                val availableRoles = roles.filter { !it.isEveryone && it.id !in configuredRoleIds }
                 if (targetSearchQuery.isBlank()) {
-                    nonEveryone
+                    availableRoles
                 } else {
-                    nonEveryone.filter { it.name.contains(targetSearchQuery, ignoreCase = true) }
+                    availableRoles.filter { it.name.contains(targetSearchQuery, ignoreCase = true) }
                 }
             }
+        val configuredMemberIds =
+            remember(overwrites) {
+                overwrites.filter { it.targetType == OverwriteTargetType.MEMBER }.map { it.targetId }.toSet()
+            }
         val matchingMembers =
-            remember(members, targetSearchQuery) {
+            remember(members, configuredMemberIds, targetSearchQuery) {
+                val availableMembers =
+                    members.filter {
+                        val uid = it.id.removePrefix("m").toLongOrNull() ?: 1L
+                        uid !in configuredMemberIds
+                    }
                 if (targetSearchQuery.isBlank()) {
-                    members
+                    availableMembers
                 } else {
-                    members.filter { it.name.contains(targetSearchQuery, ignoreCase = true) }
+                    availableMembers.filter { it.name.contains(targetSearchQuery, ignoreCase = true) }
                 }
             }
 
