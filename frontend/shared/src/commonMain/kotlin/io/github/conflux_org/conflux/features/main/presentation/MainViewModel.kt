@@ -2,6 +2,7 @@ package io.github.conflux_org.conflux.features.main.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.conflux_org.conflux.core.ui.components.MemberData
 import io.github.conflux_org.conflux.domain.model.Channel
 import io.github.conflux_org.conflux.domain.model.Guild
 import io.github.conflux_org.conflux.domain.model.OverwriteTargetType
@@ -60,6 +61,9 @@ class MainViewModel(
                     intent.targetType,
                     intent.targetId,
                 )
+            is MainIntent.ShowMemberRolesDialog -> showMemberRolesDialog(intent.show, intent.member)
+            is MainIntent.AssignMemberRole -> assignMemberRole(intent.guildId, intent.userId, intent.roleId)
+            is MainIntent.RemoveMemberRole -> removeMemberRole(intent.guildId, intent.userId, intent.roleId)
         }
     }
 
@@ -106,16 +110,15 @@ class MainViewModel(
             _uiState.update { it.copy(roleActionError = "身分組名稱不能為空白") }
             return
         }
-
         _uiState.update { it.copy(isSavingRole = true, roleActionError = null) }
         viewModelScope.launch(mainDispatcher) {
             roleRepository
                 .createRole(guildId = guildId, name = name.trim(), permissions = permissions)
-                .onSuccess { createdRole ->
+                .onSuccess { newRole ->
                     _uiState.update {
                         it.copy(
-                            roles = it.roles + createdRole,
-                            selectedRoleForEdit = createdRole,
+                            roles = it.roles + newRole,
+                            selectedRoleForEdit = newRole,
                             isSavingRole = false,
                             roleActionError = null,
                         )
@@ -140,11 +143,11 @@ class MainViewModel(
         _uiState.update { it.copy(isSavingRole = true, roleActionError = null) }
         viewModelScope.launch(mainDispatcher) {
             roleRepository
-                .updateRole(guildId = guildId, roleId = roleId, name = name?.trim(), permissions = permissions)
+                .updateRole(guildId = guildId, roleId = roleId, name = name, permissions = permissions)
                 .onSuccess { updatedRole ->
-                    _uiState.update {
-                        val updatedRoles = it.roles.map { r -> if (r.id == updatedRole.id) updatedRole else r }
-                        it.copy(
+                    _uiState.update { state ->
+                        val updatedRoles = state.roles.map { if (it.id == roleId) updatedRole else it }
+                        state.copy(
                             roles = updatedRoles,
                             selectedRoleForEdit = updatedRole,
                             isSavingRole = false,
@@ -300,6 +303,89 @@ class MainViewModel(
         }
     }
 
+    private fun showMemberRolesDialog(
+        show: Boolean,
+        member: MemberData?,
+    ) {
+        _uiState.update {
+            it.copy(
+                showMemberRolesDialog = show,
+                selectedMemberForRoles = if (show) member else null,
+                memberRoleActionError = null,
+            )
+        }
+    }
+
+    private fun assignMemberRole(
+        guildId: Long,
+        userId: Long,
+        roleId: Long,
+    ) {
+        _uiState.update { it.copy(isModifyingMemberRole = true, memberRoleActionError = null) }
+        viewModelScope.launch(mainDispatcher) {
+            roleRepository
+                .assignMemberRole(guildId = guildId, userId = userId, roleId = roleId)
+                .onSuccess {
+                    _uiState.update { state ->
+                        val current =
+                            state.memberRoles[userId.toString()]
+                                ?: state.selectedMemberForRoles
+                                    ?.takeIf { m -> m.id == userId.toString() }
+                                    ?.roleIds
+                                    .orEmpty()
+                        val updated = (current + roleId).distinct()
+                        state.copy(
+                            memberRoles = state.memberRoles + (userId.toString() to updated),
+                            isModifyingMemberRole = false,
+                            memberRoleActionError = null,
+                        )
+                    }
+                }.onFailure { error ->
+                    _uiState.update { state ->
+                        state.copy(
+                            isModifyingMemberRole = false,
+                            memberRoleActionError = error.message ?: "指派身分組失敗",
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun removeMemberRole(
+        guildId: Long,
+        userId: Long,
+        roleId: Long,
+    ) {
+        _uiState.update { it.copy(isModifyingMemberRole = true, memberRoleActionError = null) }
+        viewModelScope.launch(mainDispatcher) {
+            roleRepository
+                .removeMemberRole(guildId = guildId, userId = userId, roleId = roleId)
+                .onSuccess {
+                    _uiState.update { state ->
+                        val current =
+                            state.memberRoles[userId.toString()]
+                                ?: state.selectedMemberForRoles
+                                    ?.takeIf { m -> m.id == userId.toString() }
+                                    ?.roleIds
+                                    .orEmpty()
+                        val updated = current.filterNot { it == roleId }
+                        state.copy(
+                            memberRoles = state.memberRoles + (userId.toString() to updated),
+                            isModifyingMemberRole = false,
+                            memberRoleActionError = null,
+                        )
+                    }
+                }.onFailure { error ->
+                    _uiState.update { state ->
+                        state.copy(
+                            isModifyingMemberRole = false,
+                            memberRoleActionError = error.message ?: "移除身分組失敗",
+                        )
+                    }
+                }
+        }
+    }
+
     private fun createGuild(name: String) {
         if (name.isBlank()) {
             _uiState.update {
@@ -439,6 +525,7 @@ class MainViewModel(
                     }
                 }
         }
+
         viewModelScope.launch(mainDispatcher) {
             roleRepository
                 .getGuildRoles(guild.id)
@@ -447,14 +534,14 @@ class MainViewModel(
                         it.copy(
                             roles = roles,
                             isLoadingRoles = false,
-                            selectedRoleForEdit = roles.firstOrNull(),
+                            selectedRoleForEdit = roles.firstOrNull { r -> r.isEveryone } ?: roles.firstOrNull(),
                         )
                     }
                 }.onFailure { error ->
                     _uiState.update {
                         it.copy(
                             isLoadingRoles = false,
-                            errorMessage = error.message ?: "載入身份組失敗",
+                            roleActionError = error.message ?: "載入身分組失敗",
                         )
                     }
                 }
@@ -484,13 +571,12 @@ class MainViewModel(
                     }
                 }
         }
-        loadChannelOverwrites(channel.id)
     }
 
     private fun sendMessage(content: String) {
-        val channelId = _uiState.value.selectedChannel?.id
-        if (channelId == null) {
-            _uiState.update { it.copy(errorMessage = "請先選擇頻道") }
+        val currentChannel = _uiState.value.selectedChannel
+        if (currentChannel == null) {
+            _uiState.update { it.copy(errorMessage = "尚未選擇頻道，無法發送訊息") }
             return
         }
 
@@ -501,11 +587,9 @@ class MainViewModel(
 
         viewModelScope.launch(mainDispatcher) {
             messageRepository
-                .sendMessage(channelId, content)
-                .onSuccess { message ->
-                    _uiState.update {
-                        it.copy(messages = it.messages + message, errorMessage = null)
-                    }
+                .sendMessage(currentChannel.id, content.trim())
+                .onSuccess { newMessage ->
+                    _uiState.update { it.copy(messages = it.messages + newMessage) }
                 }.onFailure { error ->
                     _uiState.update {
                         it.copy(errorMessage = error.message ?: "發送訊息失敗")

@@ -56,6 +56,7 @@ data class MemberData(
     val status: UserStatus = UserStatus.Online,
     val customStatus: String? = null,
     val isBot: Boolean = false,
+    val roleIds: List<Long> = emptyList(),
 )
 
 /**
@@ -251,7 +252,7 @@ private fun MemberSidebarPreview() {
                     ),
             ),
             MemberCategoryData(
-                roleName = "線上",
+                roleName = "線上 — 2",
                 members =
                     listOf(
                         MemberData(
@@ -266,12 +267,12 @@ private fun MemberSidebarPreview() {
                             name = "Jordan",
                             avatarColor = Color(0xFF9B59B6),
                             status = UserStatus.Dnd,
-                            customStatus = "Do Not Disturb / In a Meeting",
+                            customStatus = "Do Not Disturb / Busy",
                         ),
                     ),
             ),
             MemberCategoryData(
-                roleName = "離線",
+                roleName = "離線 — 1",
                 members =
                     listOf(
                         MemberData(
@@ -284,5 +285,13 @@ private fun MemberSidebarPreview() {
             ),
         )
 
-    MemberSidebar(categories = sampleCategories)
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(600.dp)
+                .background(Color(0xFF1E1F22)),
+    ) {
+        MemberSidebar(categories = sampleCategories)
+    }
 }

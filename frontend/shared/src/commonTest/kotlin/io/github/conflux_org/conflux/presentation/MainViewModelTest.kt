@@ -1,5 +1,6 @@
 package io.github.conflux_org.conflux.presentation
 
+import io.github.conflux_org.conflux.core.ui.components.MemberData
 import io.github.conflux_org.conflux.data.FakeChannelOverwriteRepository
 import io.github.conflux_org.conflux.data.FakeChannelRepository
 import io.github.conflux_org.conflux.data.FakeGuildRepository
@@ -570,5 +571,70 @@ class MainViewModelTest {
 
             val state = viewModel.uiState.value
             assertTrue(state.channelOverwrites.isEmpty())
+        }
+
+    // --- Member Role Management Tests ---
+
+    @Test
+    fun showMemberRolesDialog_togglesStateAndSetsSelectedMember() =
+        runTest {
+            val viewModel = createViewModel()
+            val sampleMember = MemberData(id = "1", name = "Alex")
+
+            viewModel.handleIntent(MainIntent.ShowMemberRolesDialog(show = true, member = sampleMember))
+            assertTrue(viewModel.uiState.value.showMemberRolesDialog)
+            assertEquals(sampleMember, viewModel.uiState.value.selectedMemberForRoles)
+
+            viewModel.handleIntent(MainIntent.ShowMemberRolesDialog(show = false))
+            assertFalse(viewModel.uiState.value.showMemberRolesDialog)
+            assertNull(viewModel.uiState.value.selectedMemberForRoles)
+        }
+
+    @Test
+    fun assignMemberRole_success_callsRepoAndUpdatesState() =
+        runTest {
+            val fakeRoleRepo = FakeRoleRepository(shouldSucceed = true)
+            val viewModel = createViewModel(fakeRoleRepo = fakeRoleRepo)
+            val sampleMember = MemberData(id = "1", name = "Alex")
+            viewModel.handleIntent(MainIntent.ShowMemberRolesDialog(show = true, member = sampleMember))
+
+            viewModel.handleIntent(
+                MainIntent.AssignMemberRole(
+                    guildId = 1L,
+                    userId = 1L,
+                    roleId = 2L,
+                ),
+            )
+
+            val state = viewModel.uiState.value
+            assertEquals(listOf(2L), state.memberRoles["1"])
+            assertEquals(1, fakeRoleRepo.assignedMemberRoles.size)
+            assertEquals(Triple(1L, 1L, 2L), fakeRoleRepo.assignedMemberRoles.first())
+            assertFalse(state.isModifyingMemberRole)
+            assertNull(state.memberRoleActionError)
+        }
+
+    @Test
+    fun removeMemberRole_success_callsRepoAndUpdatesState() =
+        runTest {
+            val fakeRoleRepo = FakeRoleRepository(shouldSucceed = true)
+            fakeRoleRepo.assignedMemberRoles.add(Triple(1L, 1L, 2L))
+            val viewModel = createViewModel(fakeRoleRepo = fakeRoleRepo)
+            val sampleMember = MemberData(id = "1", name = "Alex", roleIds = listOf(2L))
+            viewModel.handleIntent(MainIntent.ShowMemberRolesDialog(show = true, member = sampleMember))
+
+            viewModel.handleIntent(
+                MainIntent.RemoveMemberRole(
+                    guildId = 1L,
+                    userId = 1L,
+                    roleId = 2L,
+                ),
+            )
+
+            val state = viewModel.uiState.value
+            assertEquals(emptyList(), state.memberRoles["1"])
+            assertTrue(fakeRoleRepo.assignedMemberRoles.isEmpty())
+            assertFalse(state.isModifyingMemberRole)
+            assertNull(state.memberRoleActionError)
         }
 }

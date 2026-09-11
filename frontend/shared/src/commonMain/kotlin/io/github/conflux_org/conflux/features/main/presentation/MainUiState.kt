@@ -1,5 +1,6 @@
 package io.github.conflux_org.conflux.features.main.presentation
 
+import io.github.conflux_org.conflux.core.ui.components.MemberData
 import io.github.conflux_org.conflux.domain.model.Channel
 import io.github.conflux_org.conflux.domain.model.ChannelOverwrite
 import io.github.conflux_org.conflux.domain.model.Guild
@@ -40,6 +41,12 @@ data class MainUiState(
     val isSavingOverwrite: Boolean = false,
     // Current user's assigned role IDs in selected guild
     val currentUserRoleIds: List<Long> = emptyList(),
+    // Member Role Management
+    val showMemberRolesDialog: Boolean = false,
+    val selectedMemberForRoles: MemberData? = null,
+    val memberRoles: Map<String, List<Long>> = emptyMap(),
+    val isModifyingMemberRole: Boolean = false,
+    val memberRoleActionError: String? = null,
 ) {
     val canManageRoles: Boolean
         get() =

@@ -1,5 +1,6 @@
 package io.github.conflux_org.conflux.features.main.presentation
 
+import io.github.conflux_org.conflux.core.ui.components.MemberData
 import io.github.conflux_org.conflux.domain.model.Channel
 import io.github.conflux_org.conflux.domain.model.Guild
 import io.github.conflux_org.conflux.domain.model.OverwriteTargetType
@@ -84,5 +85,23 @@ sealed interface MainIntent {
         val channelId: Long,
         val targetType: OverwriteTargetType,
         val targetId: Long,
+    ) : MainIntent
+
+    // Member Role Management
+    data class ShowMemberRolesDialog(
+        val show: Boolean,
+        val member: MemberData? = null,
+    ) : MainIntent
+
+    data class AssignMemberRole(
+        val guildId: Long,
+        val userId: Long,
+        val roleId: Long,
+    ) : MainIntent
+
+    data class RemoveMemberRole(
+        val guildId: Long,
+        val userId: Long,
+        val roleId: Long,
     ) : MainIntent
 }
