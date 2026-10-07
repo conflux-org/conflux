@@ -4,8 +4,8 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from api.models import Guild, GuildMember, Role, User
-from api.permissions import PermissionFlags
+from api.models import Channel, Guild, GuildMember, Role, User
+from api.permissions import PermissionFlags, has_guild_permission
 
 
 @require_http_methods(["GET"])
@@ -47,6 +47,10 @@ def create_guild(request):
             position=0,
             is_everyone=True,
         )
+        Channel.objects.create(
+            guild=guild,
+            name="general",
+        )
 
     return JsonResponse(
         {
@@ -57,3 +61,57 @@ def create_guild(request):
         },
         status=HTTPStatus.CREATED,
     )
+
+
+@require_http_methods(["PATCH", "DELETE"])
+def guild_detail(request, guild_id):
+    if request.method == "PATCH":
+        return update_guild(request, guild_id)
+    return delete_guild(request, guild_id)
+
+
+def update_guild(request, guild_id):
+    guild = Guild.objects.filter(id=guild_id).first()
+    if not guild:
+        return JsonResponse({"error": "Guild not found"}, status=HTTPStatus.NOT_FOUND)
+
+    if not has_guild_permission(request.user_id, guild, PermissionFlags.MANAGE_GUILD):
+        return JsonResponse(
+            {"error": "Forbidden: missing MANAGE_GUILD permission"},
+            status=HTTPStatus.FORBIDDEN,
+        )
+
+    name = request.json.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return JsonResponse(
+            {"error": "Name cannot be empty"}, status=HTTPStatus.BAD_REQUEST
+        )
+
+    guild.name = name.strip()
+    guild.save()
+
+    return JsonResponse(
+        {
+            "id": guild.id,
+            "name": guild.name,
+            "owner_id": guild.owner_id,
+            "created_at": guild.created_at.isoformat(),
+        },
+        status=HTTPStatus.OK,
+    )
+
+
+def delete_guild(request, guild_id):
+    guild = Guild.objects.filter(id=guild_id).first()
+    if not guild:
+        return JsonResponse({"error": "Guild not found"}, status=HTTPStatus.NOT_FOUND)
+
+    if guild.owner_id != request.user_id:
+        return JsonResponse(
+            {"error": "Forbidden: only guild owner can delete guild"},
+            status=HTTPStatus.FORBIDDEN,
+        )
+
+    guild.delete()
+
+    return JsonResponse({"message": "Guild deleted"}, status=HTTPStatus.OK)
