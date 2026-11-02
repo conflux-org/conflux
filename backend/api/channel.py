@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
@@ -82,3 +83,80 @@ def create_channel(request, guild_id):
         },
         status=HTTPStatus.CREATED,
     )
+
+
+@require_http_methods(["PATCH", "DELETE"])
+def channel_detail(request, channel_id):
+    if request.method == "PATCH":
+        return update_channel(request, channel_id)
+    return delete_channel(request, channel_id)
+
+
+def update_channel(request, channel_id):
+    channel = Channel.objects.select_related("guild").filter(id=channel_id).first()
+    if not channel:
+        return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
+
+    if not has_guild_permission(
+        request.user_id, channel.guild, PermissionFlags.MANAGE_CHANNELS
+    ):
+        return JsonResponse(
+            {"error": "Forbidden: missing MANAGE_CHANNELS permission"},
+            status=HTTPStatus.FORBIDDEN,
+        )
+
+    name = request.json.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return JsonResponse(
+            {"error": "Name cannot be empty"}, status=HTTPStatus.BAD_REQUEST
+        )
+
+    if (
+        Channel.objects.filter(guild_id=channel.guild_id, name=name.strip())
+        .exclude(id=channel.id)
+        .exists()
+    ):
+        return JsonResponse(
+            {"error": "Channel already exists"}, status=HTTPStatus.CONFLICT
+        )
+
+    channel.name = name.strip()
+    channel.save()
+
+    return JsonResponse(
+        {
+            "id": channel.id,
+            "name": channel.name,
+            "guild_id": channel.guild_id,
+            "created_at": channel.created_at.isoformat(),
+        },
+        status=HTTPStatus.OK,
+    )
+
+
+def delete_channel(request, channel_id):
+    channel = Channel.objects.select_related("guild").filter(id=channel_id).first()
+    if not channel:
+        return JsonResponse({"error": "Channel not found"}, status=HTTPStatus.NOT_FOUND)
+
+    if not has_guild_permission(
+        request.user_id, channel.guild, PermissionFlags.MANAGE_CHANNELS
+    ):
+        return JsonResponse(
+            {"error": "Forbidden: missing MANAGE_CHANNELS permission"},
+            status=HTTPStatus.FORBIDDEN,
+        )
+
+    with transaction.atomic():
+        # Lock the guild row so concurrent deletes cannot remove the last channel
+        Guild.objects.select_for_update().filter(id=channel.guild_id).first()
+        if Channel.objects.filter(guild_id=channel.guild_id).count() <= 1:
+            return JsonResponse(
+                {"error": "Cannot delete the last channel of a guild"},
+                status=HTTPStatus.BAD_REQUEST,
+            )
+
+        # Cascades soft delete to messages and permission overwrites
+        channel.delete()
+
+    return JsonResponse({"message": "Channel deleted"}, status=HTTPStatus.OK)
