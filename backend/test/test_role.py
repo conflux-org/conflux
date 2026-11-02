@@ -38,7 +38,7 @@ class RoleAPITestCase(TestCase):
             guild=self.guild,
             name="Manager",
             permissions=PermissionFlags.MANAGE_ROLES,
-            position=1,
+            position=10,
         )
         GuildMemberRole.objects.create(
             guild_member=self.admin_member, role=self.admin_role
@@ -137,9 +137,12 @@ class RoleAPITestCase(TestCase):
         self.assertEqual(resp.status_code, HTTPStatus.BAD_REQUEST)
 
     def test_update_role_success(self):
+        target_role = Role.objects.create(
+            guild=self.guild, name="Manager Lite", permissions=0, position=2
+        )
         url = reverse(
             "guild-role-detail",
-            kwargs={"guild_id": self.guild.id, "role_id": self.admin_role.id},
+            kwargs={"guild_id": self.guild.id, "role_id": target_role.id},
         )
         payload = {"name": "Senior Manager", "position": 5}
         resp = self.client.patch(

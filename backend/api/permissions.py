@@ -1,5 +1,7 @@
 from enum import IntFlag
 
+from django.db.models import Max
+
 from api.models import (
     Channel,
     ChannelPermissionOverwrite,
@@ -143,3 +145,32 @@ def has_channel_permission(
     user_id: int, channel: Channel, permission: PermissionFlags
 ) -> bool:
     return bool(compute_channel_permissions(user_id, channel) & permission)
+
+
+def get_highest_role_position(user_id: int, guild: Guild) -> int:
+    """Highest position among the member's roles; @everyone (0) if none."""
+    highest = Role.objects.filter(
+        guild=guild,
+        member_roles__guild_member__user_id=user_id,
+        member_roles__guild_member__deleted_at__isnull=True,
+        member_roles__deleted_at__isnull=True,
+        is_everyone=False,
+    ).aggregate(highest=Max("position"))["highest"]
+    return highest if highest is not None else 0
+
+
+def can_manage_role_position(user_id: int, guild: Guild, position: int) -> bool:
+    # Owner sits above every role; others must strictly outrank the position
+    if guild.owner_id == user_id:
+        return True
+    return get_highest_role_position(user_id, guild) > position
+
+
+def can_manage_member(actor_id: int, target_id: int, guild: Guild) -> bool:
+    if guild.owner_id == actor_id:
+        return True
+    if guild.owner_id == target_id:
+        return False
+    return get_highest_role_position(actor_id, guild) > get_highest_role_position(
+        target_id, guild
+    )
