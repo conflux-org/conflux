@@ -23,6 +23,11 @@ urlpatterns = [
     path("guild/", guild.create_guild, name="guild-create"),
     path("guild/<int:guild_id>/roles/", role.guild_roles, name="guild-roles"),
     path(
+        "guild/<int:guild_id>/roles/positions/",
+        role.guild_role_positions,
+        name="guild-role-positions",
+    ),
+    path(
         "guild/<int:guild_id>/roles/<int:role_id>/",
         role.guild_role_detail,
         name="guild-role-detail",
