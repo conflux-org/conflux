@@ -16,6 +16,11 @@ urlpatterns = [
         name="guild-channels",
     ),
     path(
+        "channel/<int:channel_id>/",
+        channel.channel_detail,
+        name="channel-detail",
+    ),
+    path(
         "channel/<int:channel_id>/messages/",
         message.channel_messages,
         name="channel-messages",
