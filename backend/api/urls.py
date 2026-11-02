@@ -1,6 +1,6 @@
 from django.urls import path
 
-from api import auth, channel, channel_overwrite, guild, message, role
+from api import auth, channel, channel_overwrite, guild, member, message, role
 
 urlpatterns = [
     path("auth/login/", auth.login, name="login"),
@@ -23,14 +23,40 @@ urlpatterns = [
     path("guild/", guild.create_guild, name="guild-create"),
     path("guild/<int:guild_id>/roles/", role.guild_roles, name="guild-roles"),
     path(
+        "guild/<int:guild_id>/roles/positions/",
+        role.guild_role_positions,
+        name="guild-role-positions",
+    ),
+    path(
         "guild/<int:guild_id>/roles/<int:role_id>/",
         role.guild_role_detail,
         name="guild-role-detail",
     ),
     path(
+        "guild/<int:guild_id>/members/",
+        member.guild_members,
+        name="guild-members",
+    ),
+    path(
+        "guild/<int:guild_id>/members/me/",
+        member.leave_guild_me,
+        name="guild-member-me",
+    ),
+    path(
+        "guild/<int:guild_id>/members/<int:user_id>/",
+        member.kick_member,
+        name="guild-member-detail",
+    ),
+    path("guild/<int:guild_id>/leave/", member.leave_guild, name="guild-leave"),
+    path(
         "guild/<int:guild_id>/members/<int:user_id>/roles/<int:role_id>/",
         role.guild_member_role_detail,
         name="guild-member-role-detail",
+    ),
+    path(
+        "channel/<int:channel_id>/members/",
+        member.channel_members,
+        name="channel-members",
     ),
     path(
         "channel/<int:channel_id>/overwrites/",
